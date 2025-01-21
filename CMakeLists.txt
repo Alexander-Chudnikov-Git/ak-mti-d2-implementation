@@ -6,7 +6,7 @@ set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 include(cmake/utils/build_protection.cmake)
 
 set(PROJECT_NAME    "ak-mti-d2-utility")
-set(PROJECT_VERSION "0.0.1")
+set(PROJECT_VERSION "0.0.2")
 project(${PROJECT_NAME} VERSION ${PROJECT_VERSION})
 
 set(CMAKE_CXX_STANDARD 20)
@@ -19,7 +19,7 @@ set(PROJECT_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(PROJECT_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(PROJECT_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON) # For compatability with C stuff
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 include(cmake/platform/generic_builder.cmake)
 

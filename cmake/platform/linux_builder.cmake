@@ -1,6 +1,7 @@
 include(cmake/utils/get_linux_kernel.cmake)
 
 if(CMAKE_RELEASE)
+    set(CMAKE_BUILD_TYPE "RELEASE" CACHE INTERNAL "Build as release" FORCE)
     add_compile_options(
         -fvisibility=hidden
         -pedantic
@@ -29,6 +30,7 @@ if(CMAKE_RELEASE)
         -Ofast
     )
 else()
+    set(CMAKE_BUILD_TYPE "DEBUG" CACHE INTERNAL "Build as debug" FORCE)
     add_compile_options(
         -Wall
         -Wextra
