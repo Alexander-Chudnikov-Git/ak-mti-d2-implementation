@@ -1,4 +1,7 @@
 include(FetchContent)
+include(ExternalProject)
+
+include(cmake/utils/list_all_subdirectories.cmake)
 
 message(STATUS "CXX compiler:      ${CMAKE_CXX_COMPILER_ID}")
 
@@ -14,9 +17,9 @@ set(PROJECT_INCLUDE_DIRS)
 set(PROJECT_LIBRARIES_LIST)
 
 # [SOURCE DIRECTORIES]
-set(PROJECT_MAIN_SRC_DIR   "src")
+set(PROJECT_MAIN_SRC_DIR   "${CMAKE_SOURCE_DIR}/src")
 
-file(GLOB PROJECT_MAIN_SRC_FILES CONFIGURE_DEPENDS
+file(GLOB PROJECT_MAIN_SRC_FILES
     "${PROJECT_MAIN_SRC_DIR}/*.hpp"
     "${PROJECT_MAIN_SRC_DIR}/*.cpp"
 )
@@ -35,24 +38,18 @@ else()
     message(FATAL_ERROR "Unsupported OS: ${CMAKE_SYSTEM_NAME}")
 endif()
 
+list(APPEND PROJECT_LIBRARIES_LIST pthread)
+
 # [LIBRARIES]
+include(cmake/libraries/cxxopts.cmake)
 include(cmake/libraries/fmt.cmake)
 include(cmake/libraries/spdlog.cmake)
 include(cmake/libraries/akrypt.cmake)
+include(cmake/libraries/utils.cmake)
+include(cmake/libraries/mti-d2.cmake)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_INCLUDE_DIRS})
 target_link_directories(${PROJECT_NAME}    PUBLIC ${PROJECT_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME}             ${PROJECT_LIBRARIES_LIST})
-
-# [SOME BUILD INFO]
-string(TIMESTAMP COMPILE_TIME "%Y-%m-%d %H:%M:%S")
-
-target_compile_definitions(${PROJECT_NAME} PRIVATE
-                            PROJECT_NAME="${PROJECT_NAME}"
-                            PROJECT_VERSION="${PROJECT_VERSION}"
-                            COMPILE_TIME="${COMPILE_TIME}"
-                            COMPILER_ID="${CMAKE_CXX_COMPILER_ID}"
-                            COMPILER_VERSION="${CMAKE_CXX_COMPILER_VERSION}")
-
+target_link_libraries(${PROJECT_NAME}      PRIVATE ${PROJECT_LIBRARIES_LIST})
 
 include(cmake/utils/upx_compress.cmake)
