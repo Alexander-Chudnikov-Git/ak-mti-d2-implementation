@@ -8,36 +8,115 @@
 
 namespace MTI_D2
 {
+/**
+ * @brief      Класс субьекта криптографического протокола MTI-D2
+ *
+ *             Обеспечивает:
+ *              - Управление данными между субьектами (сертификаты, ключи)
+ *              - Генерацию параметров протокола
+ *              - Выполнение криптографических вычислений
+ *              - Взаимную проверку участников
+ *
+ */
 class Subject
 {
 public:
+    /**
+     * @brief      Конструктор по умолчанию
+     */
     Subject() = default;
+
+    /**
+     * @brief      Конструктор с частичной инициализацией (устаревший)
+     * 
+     * @param[in]  subject_name  Идентификатор субъекта
+     * @param[in]  cert_ca       Сертификат УЦ
+     * @param[in]  cert_s        Собственный сертификат
+     * @param[in]  d_s_key       Секретный ключ
+     * @param[in]  id_e          Идентификатор внешнего участника (не реализовано)
+     * 
+     * @deprecated Используйте версию с cert_e вместо id_e
+     */
     Subject(const std::string& subject_name,
             UTILS::AkryptCertificate cert_ca,
             UTILS::AkryptCertificate cert_s,
             UTILS::AkryptSkey d_s_key,
             const char* id_e); ///< Не реализовано на данный момент
+
+    /**
+     * @brief      Основной конструктор с полной инициализацией
+     * 
+     * @param[in]  subject_name  Идентификатор субъекта
+     * @param[in]  cert_ca       Сертификат УЦ
+     * @param[in]  cert_s        Собственный сертификат
+     * @param[in]  d_s_key       Секретный ключ
+     * @param[in]  cert_e        Сертификат внешнего участника
+     */
     Subject(const std::string& subject_name,
             UTILS::AkryptCertificate cert_ca,
             UTILS::AkryptCertificate cert_s,
             UTILS::AkryptSkey d_s_key,
             UTILS::AkryptCertificate cert_e);
+    /**
+     * @brief      Деструктор
+     */
     ~Subject();
 
+    /**
+     * @brief      Инициализация субъекта параметрами
+     * 
+     * @param[in]  cert_ca  Сертификат УЦ
+     * @param[in]  cert_s   Собственный сертификат
+     * @param[in]  d_s_key  Секретный ключ
+     * @param[in]  cert_e   Сертификат внешнего участника (опционально)
+     * @param[in]  id_e     Идентификатор внешнего участника (опционально)
+     */
     void initSubject(UTILS::AkryptCertificate cert_ca,
                      UTILS::AkryptCertificate cert_s,
                      UTILS::AkryptSkey d_s_key,
                      UTILS::AkryptCertificate cert_e = {nullptr},
                      const char* id_e = {});
 
+    /**
+     * @brief      Инициализация криптографической библиотеки
+     * 
+     */
     void initLibAkrypt();
 
 public:
+    /**
+     * @brief Генерация случайного скаляра ξ_s
+     * @return true если генерация успешна
+     */
     bool generateRandomXiScalar();
+
+    /**
+     * @brief Генерация случайного скаляра ξ_se
+     * @return true если генерация успешна
+     */
     bool generateRandomXiSEScalar();
+
+    /**
+     * @brief Вычисление точки E
+     * @return true если вычисление успешно
+     */
     bool calculateEPoint();
+
+    /**
+     * @brief Вычисление точки С
+     * @return true если вычисление успешно
+     */
     bool calculateСPoint();
+    /**
+     * @brief Вычисление точки Q
+     * @return true если вычисление успешно
+     */
     bool calculateQPoint();
+
+    /**
+     * @brief Извлечение серийного номера
+     * @return true если вычисление успешно
+     */
     bool extractSerialNumber();
     bool extractCASerialNumber();
     bool extractExternCertId();

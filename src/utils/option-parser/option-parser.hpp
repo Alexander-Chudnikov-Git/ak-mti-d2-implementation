@@ -1,31 +1,95 @@
 #ifndef OPTION_PARSER_HPP
 #define OPTION_PARSER_HPP
 
-#include <cxxopts.hpp>
+#include <cxxopts.hpp> ///< Библиотека для парсинга параметров командной строки
 #include <memory>
 #include <string>
 #include <type_traits>
 
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
- 
+#include <spdlog/spdlog.h> ///< Библиотека для вывода логов в командной строке
+#include <spdlog/sinks/stdout_color_sinks.h> ///< Цветной вывод данных
+
 namespace UTILS
 {
+/**
+ * @brief      Класс обработки параметров командной строки
+ *     
+ */
 class OptionParser
 {
 public:
+    /**
+     * @brief      Конструктор парсера опций
+     * 
+     * @param[in]  app_name         Название приложения для вывода в справке
+     * @param[in]  app_description  Описание приложения для вывода в справке
+     */
     OptionParser(const std::string& app_name, const std::string& app_description);
+    
+    /**
+     * @brief Деструктор (генерируется по умолчанию)
+     */
     ~OptionParser();
 
+    /**
+     * @brief      Парсинг аргументов командной строки
+     * 
+     * @param[in]  argc  Количество аргументов
+     * @param[in]  argv  Массив строк аргументов
+     * @throws     cxxopts::exceptions::exception В случае ошибок парсинга
+     * 
+     * @note Должен вызываться после добавления всех опций через addOption()
+     */
     void parseOptions(const int argc, const char** argv);
+
+    /**
+     * @brief      Проверка наличия опции
+     * 
+     * @param[in]  name  Имя опции
+     * @return     true если опция присутствует в аргументах
+     */
     bool hasOption(const std::string& name) const;
+
+    /**
+     * @brief      Добавление флага (опции без значения)
+     * 
+     * @param[in]  name         Имя опции
+     * @param[in]  description  Описание для справки
+     */
     void addOption(const std::string& name, const std::string& description);
+
+    /**
+     * @brief      Получение количества вхождений опции
+     * 
+     * @param[in]  name  Имя опции
+     * @return     Количество раз, которое была указана опция
+     */
     size_t getOptionCount(const std::string& name) const;
 
+    /**
+     * @brief Вывод справки по опциям в лог
+     */
     void logHelp() const;
+
+    /**
+     * @brief      Отладочный вывод аргументов
+     * 
+     * @param[in]  argc  Количество аргументов
+     * @param[in]  argv  Массив аргументов
+     */
     void debugLog(const int argc, const char** argv) const;
 
 public:
+    /**
+     * @brief      Добавление опции со значением и значением по умолчанию
+     * 
+     * @tparam     T            Тип значения опции
+     * @param[in]  name         Имя опции
+     * @param[in]  description  Описание для справки
+     * @param[in]  default_value  Значение по умолчанию
+     * 
+     * @note Если парсер не инициализирован, выводит ошибку в лог
+     */
     template <typename T>
     void addOption(const std::string& name, const std::string& description, const T& default_value)
     {
@@ -42,6 +106,15 @@ public:
         return;
     }
 
+    /**
+     * @brief      Добавление опции со значением (без значения по умолчанию)
+     * 
+     * @tparam     T            Тип значения опции
+     * @param[in]  name         Имя опции
+     * @param[in]  description  Описание для справки
+     * 
+     * @note Если парсер не инициализирован, выводит ошибку в лог
+     */
     template <typename T>
     void addOption(const std::string& name, const std::string& description)
     {
@@ -56,6 +129,16 @@ public:
         return;
     }
 
+    /**
+     * @brief      Получение значения опции
+     * 
+     * @tparam     T       Тип возвращаемого значения (по умолчанию std::string)
+     * @param[in]  name    Имя опции
+     * @return     Значение опции или значение по умолчанию
+     * 
+     * @throws     cxxopts::exceptions::exception При ошибках преобразования типа
+     * @note       В случае ошибок возвращает T{} и пишет сообщение в лог
+     */
     template <typename T = std::string>
     T getOption(const std::string& name) const
     {
@@ -91,8 +174,8 @@ public:
     }
 
 private:
-    std::unique_ptr<cxxopts::Options>     m_options;
-    std::unique_ptr<cxxopts::ParseResult> m_parsed_options;
+    std::unique_ptr<cxxopts::Options>     m_options;         ///< Объект для настройки опций
+    std::unique_ptr<cxxopts::ParseResult> m_parsed_options;  ///< Результаты парсинга аргументов
 };
 
 } // namespace UTILS
