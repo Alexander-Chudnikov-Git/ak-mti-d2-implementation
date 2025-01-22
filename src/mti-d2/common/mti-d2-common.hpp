@@ -1,3 +1,21 @@
+/**
+ * @file       <certificate-common.hpp>
+ * @brief      Заголовочный файл с общими определениями сертификатов
+ *
+ *             Константы и перечисления для работы с сертификатами.
+ *
+ * @author     CHOO_IS_FOX (@Alexander-Chudnikov-Git)
+ * @date       20.01.2025
+ * @version    0.0.1
+ *
+ * @bug        На данный момент баги отсутствуют.
+ *
+ * @copyright  А. А. Чудников, Абдуллабеков Т. М, Хохлов E. A. 2025
+ *
+ * @license    Данный проект находится под публичной лицензией GNUv3.
+ *
+ */
+
 #ifndef CERTIFICATE_COMMON_HPP
 #define CERTIFICATE_COMMON_HPP
 

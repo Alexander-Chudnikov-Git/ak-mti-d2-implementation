@@ -1,3 +1,23 @@
+ /**
+ * @file       <option-parser.hpp>
+ * @brief      Заголовочный файл для класса OptionParser
+ *
+ *             Данный класс парсит данные из командной строки.
+ *
+ * @author     CHOO_IS_FOX (@Alexander-Chudnikov-Git)
+ * @date       20.01.2025
+ * @version    0.0.1
+ *
+ *
+ * @bug        На данный момент баги отсутсвуют.
+ *
+ *
+ * @copyright  А. А. Чудников, Абдуллабеков Т. М, Хохлов E. A. 2025
+ *
+ * @license    Данный проект находится под публичной лицензией GNUv3.
+ *
+ */
+
 #ifndef OPTION_PARSER_HPP
 #define OPTION_PARSER_HPP
 
