@@ -8,7 +8,7 @@
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-
+ 
 namespace UTILS
 {
 class OptionParser
