@@ -9,14 +9,7 @@
 namespace MTI_D2
 {
 /**
- * @brief      Класс субьекта криптографического протокола MTI-D2
- *
- *             Обеспечивает:
- *              - Управление данными между субьектами (сертификаты, ключи)
- *              - Генерацию параметров протокола
- *              - Выполнение криптографических вычислений
- *              - Взаимную проверку участников
- *
+ * @brief      Класс конкретного субьекта криптографического протокола MTI-D2
  */
 class Subject
 {
@@ -118,72 +111,355 @@ public:
      * @return true если вычисление успешно
      */
     bool extractSerialNumber();
+
+    /**
+     * @brief Извлечение серийного номера CA сертификата
+     * @return true если вычисление успешно
+     */
     bool extractCASerialNumber();
+
+    /**
+     * @brief Айди внешнего сертификата
+     * @return true если вычисление успешно
+     */
     bool extractExternCertId();
+
+    /**
+     * @brief Внешний публичный ключ
+     * @return true если вычисление успешно
+     */
     bool extractExternPublicKey();
+
+    /**
+     * @brief Проверка точки на эллептической кривой
+     * @return true если вычисление успешно
+     */
     bool checkExternEPoint();
+
+    /**
+     * @brief Поиск внешнего сертификата
+     * @return true если вычисление успешно
+     */
     bool findExternCert();
+
+    /**
+     * @brief Подтверждение серийного номера CA сертификата
+     * @return true если вычисление успешно
+     */
     bool verifyCaSerialNumber();
+
+    /**
+     * @brief Подтверждение эллептической кривой
+     * @return true если вычисление успешно
+     */
     bool verifyWCType();
+
+    /**
+     * @brief Подтверждение внешнего CA
+     * @return true если вычисление успешно
+     */
     bool verifyExternCa();
+
+    /**
+     * @brief Проверка E_e и Q_e
+     * @return true если вычисление успешно
+     */
     bool verifyXDiff();
+
+    /**
+     * @brief Проверка C_e and P
+     * @return true если вычисление успешно
+     */
     bool verifyPDiff();
 
 public:
+    /**
+     * @brief Установка точки E_s
+     * @param[in] E_s_point Точка эллиптической кривой
+     */
     void setE_s_point(const wpoint& E_s_point);
+
+    /**
+     * @brief Установка точки E_e
+     * @param[in] E_e_point Точка эллиптической кривой
+     */
     void setE_e_point(const wpoint& E_e_point);
+
+    /**
+     * @brief Установка точки Q_s
+     * @param[in] Q_s_point Точка эллиптической кривой
+     */
     void setQ_s_point(const wpoint& Q_s_point);
+
+    /**
+     * @brief Установка точки Q_e
+     * @param[in] Q_e_point Точка эллиптической кривой
+     */
     void setQ_e_point(const wpoint& Q_e_point);
+
+    /**
+     * @brief Установка точки С_s
+     * @param[in] С_s_point Точка эллиптической кривой
+     */
     void setС_s_point(const wpoint& С_s_point);
+
+    /**
+     * @brief Установка точки С_e
+     * @param[in] С_e_point Точка эллиптической кривой
+     */
     void setС_e_point(const wpoint& С_e_point);
+
+    /**
+     * @brief      Установка серийного номера УЦ
+     * 
+     * @param[in]  ca_serialnum      Указатель на буфер с серийным номером
+     * @param[in]  ca_serialnum_len  Длина данных в байтах (макс 32)
+     * 
+     */
     void setN_ca_num(const ak_uint8* ca_serialnum, ak_uint32 ca_serialnum_len);
+
+    /**
+     * @brief      Установка собственного серийного номера
+     * 
+     * @param[in]  s_serialnum      Указатель на буфер с серийным номером
+     * @param[in]  s_serialnum_len  Длина данных в байтах (макс 32)
+     * 
+     */
     void setN_s_num(const ak_uint8* s_serialnum, ak_uint32 s_serialnum_len);
+
+    /**
+     * @brief      Установка серийного номера внешнего участника
+     * 
+     * @param[in]  e_serialnum      Указатель на буфер с серийным номером
+     * @param[in]  e_serialnum_len  Длина данных в байтах (макс 32)
+     * 
+     */
     void setN_e_num(const ak_uint8* e_serialnum, ak_uint32 e_serialnum_len);
+
+    /**
+     * @brief      Установка флага запроса для локального участника
+     * 
+     * @param[in]  req  true - требует выполнения операции, false - отмена
+     * 
+     * @note       Влияет на логику протокола при взаимной аутентификации
+     */
     void setReq_s(bool req);
+
+    /**
+     * @brief      Установка флага запроса для внешнего участника
+     * 
+     * @param[in]  req  true - требует выполнения операции, false - отмена
+     * 
+     * @see        setReq_s()
+     */
     void setReq_e(bool req);
+
+    /**
+     * @brief      Установка идентификатора эллиптической кривой для локального участника
+     * 
+     * @param[in]  s_wc_id  Идентификатор кривой из перечисления wcurve_id_t
+     * 
+     */
     void set_e_s_id(wcurve_id_t s_wc_id);
+
+    /**
+     * @brief      Установка идентификатора эллиптической кривой для внешнего участника
+     * 
+     * @param[in]  e_wc_id  Идентификатор кривой из перечисления wcurve_id_t
+     * 
+     */
     void set_e_e_id(wcurve_id_t e_wc_id);
 
+    /**
+     * @brief      Установка собственного сертификата
+     * 
+     * @param[in]  cert_s  Объект сертификата
+     * 
+     */
     void setCert_s(UTILS::AkryptCertificate cert_s);
+
+    /**
+     * @brief      Установка сертификата внешнего участника
+     * 
+     * @param[in]  cert_e  Объект сертификата
+     * 
+     */
     void setCert_e(UTILS::AkryptCertificate cert_e);
 
 public:
+    /**
+     * @brief      Получение скаляра ξ_s (локальный участник)
+     * 
+     * @return     Указатель на массив из 4 элементов ak_uint64
+     */
     const ak_uint64* getXi_s_key() const;
+
+    /**
+     * @brief      Получение скаляра ξ_e (внешний участник)
+     * 
+     * @return     Указатель на массив из 4 элементов ak_uint64
+     */
     const ak_uint64* getXi_e_key() const;
+
+    /**
+     * @brief      Получение скаляра ξ_se (совместное значение)
+     * 
+     * @return     Указатель на массив из 4 элементов ak_uint64
+     */
     const ak_uint64* getXi_se_key() const;
+
+    /**
+     * @brief      Получение скаляра ξ_es 
+     * 
+     * @return     Указатель на массив из 4 элементов ak_uint64
+     * @note       Используется для взаимной аутентификации участников
+     */
     const ak_uint64* getXi_es_key() const;
+
+    /**
+     * @brief      Получение точки E_s (локальный участник)
+     * 
+     * @return     Копия структуры точки эллиптической кривой
+     */
     const wpoint getE_s_point() const;
+
+    /**
+     * @brief      Получение точки E_e (внешний участник)
+     * 
+     * @return     Копия структуры точки эллиптической кривой
+     */
     const wpoint getE_e_point() const;
+
+    /**
+     * @brief      Получение точки Q_s (локальный участник)
+     * 
+     * @return     Копия структуры точки эллиптической кривой
+     */
     const wpoint getQ_s_point() const;
+
+    /**
+     * @brief      Получение точки Q_e (внешний участник)
+     * 
+     * @return     Копия структуры точки эллиптической кривой
+     */
     const wpoint getQ_e_point() const;
+
+    /**
+     * @brief      Получение точки С_s (локальные проверочные данные)
+     * 
+     * @return     Копия структуры точки эллиптической кривой
+     */
     const wpoint getС_s_point() const;
+
+    /**
+     * @brief      Получение точки С_e (внешние проверочные данные)
+     * 
+     * @return     Копия структуры точки эллиптической кривой
+     */
     const wpoint getС_e_point() const;
+
+    /**
+     * @brief      Получение серийного номера УЦ
+     * 
+     * @return     Указатель на буфер размером до 32 байт
+     */
     const ak_uint8* getN_ca_num() const;
+
+    /**
+     * @brief      Получение собственного серийного номера
+     * 
+     * @return     Указатель на буфер размером до 32 байт
+     */
     const ak_uint8* getN_s_num() const;
+
+    /**
+     * @brief      Получение серийного номера внешнего участника
+     * 
+     * @return     Указатель на буфер размером до 32 байт
+     */
     const ak_uint8* getN_e_num() const;
+
+    /**
+     * @brief      Получение длины серийного номера УЦ
+     * 
+     * @return     Фактическое количество значимых байт в буфере N_ca_num
+     */
     ak_uint32 getN_ca_num_len() const;
+
+    /**
+     * @brief      Получение длины собственного серийного номера
+     * 
+     * @return     Фактическое количество байт в буфере N_s_num
+     */
     ak_uint32 getN_s_num_len() const;
+
+    /**
+     * @brief      Получение длины серийного номера внешнего участника
+     * 
+     * @return     Фактическое количество байт в буфере N_e_num
+     */
     ak_uint32 getN_e_num_len() const;
+
+    /**
+     * @brief      Получение состояния флага запроса для локального участника
+     * 
+     * @return     true - требуется выполнение операции
+     * 
+     */
     bool getReq_s() const;
+
+    /**
+     * @brief      Получение состояния флага запроса для внешнего участника
+     * 
+     * @return     true - требуется ответная операция
+     * 
+     */
     bool getReq_e() const;
+
+    /**
+     * @brief      Получение идентификатора кривой локального участника
+     * 
+     * @return     Элемент перечисления wcurve_id_t
+     * 
+     */
     wcurve_id_t get_e_s_id() const;
+
+    /**
+     * @brief      Получение идентификатора кривой внешнего участника
+     * 
+     * @return     Элемент перечисления wcurve_id_t
+     * 
+     */
     wcurve_id_t get_e_e_id() const;
 
+    /**
+     * @brief      Получение копии собственного сертификата
+     * 
+     * @return     Объект AkryptCertificate
+     * 
+     */
     UTILS::AkryptCertificate getCert_s();
+
+    /**
+     * @brief      Получение копии сертификата внешнего участника
+     * 
+     * @return     Объект AkryptCertificate
+     * 
+     */
     UTILS::AkryptCertificate getCert_e();
 
 private:
-    std::string m_subject_name;
+    std::string m_subject_name; ///< Уникальный идентификатор участника протокола
 
-    bool m_initialized = {false};
+    bool m_initialized = {false}; ///< Флаг завершённости инициализации
 
-    UTILS::AkryptCertificate m_cert_ca = {nullptr};
-    UTILS::AkryptCertificate m_cert_s  = {nullptr};
-    UTILS::AkryptCertificate m_cert_e  = {nullptr};
-    UTILS::AkryptSkey        m_d_s_key = {nullptr};
+    UTILS::AkryptCertificate m_cert_ca = {nullptr};///< Сертификат корневого УЦ для проверки цепочки доверия
+    UTILS::AkryptCertificate m_cert_s  = {nullptr};///< Собственный сертификат участника 
+    UTILS::AkryptCertificate m_cert_e  = {nullptr};///< Сертификат внешнего участника 
+    UTILS::AkryptSkey        m_d_s_key = {nullptr};///< Секретный ключ для вычислений 
 
-    const char* m_id_s = {nullptr};
-    const char* m_id_e = {nullptr};
+    const char* m_id_s = {nullptr};///< Идентификатор локального субъекта
+    const char* m_id_e = {nullptr};///< Идентификатор внешнего субъекта
 
     /** s stands for 'self' and e for 'extern', so is subject is A, then 's -> a' 'e -> b' **/
     ak_uint64 m_Xi_s_key[4] = {0}; ///< ξ_a
