@@ -1,4 +1,4 @@
-# ak-mti-d2-implementation
+# Протокол MTI/MD2
 
 Этот проект предназначен для демонстрации и тестирования алгоритма обмена ключами MTI/MD2 с использованием библиотеки libcrypt. Он предоставляет функциональность для обмена ключами между несколькими субъектами, используя алгоритм MTI/MD2.
 
@@ -25,7 +25,7 @@ aktool k -nt sign512 --curve ec512b -o test_ca.key --op test_ca.crt \
    --to certificate --days 3650 --ca \
    --id "/cn=Example CA/ct=RU/st=Москва/ot=Blueline Software"
 ```
-2. **Сгенерируйте csr субъектов A и B и пары ключей**
+2. **Генерация csr субъектов A и B и пары ключей**
 ```bash
 aktool k -nt sign256 -o subject_a.key --op subject_a.csr --to pem \
    --id "/cn=Subject A/ct=RU/em=subject_a@blueline-software.moscow"
@@ -34,7 +34,7 @@ aktool k -nt sign256 -o subject_a.key --op subject_a.csr --to pem \
 aktool k -nt sign256 -o subject_b.key --op subject_b.csr --to pem \
    --id "/cn=Subject B/ct=RU/em=subject_b@blueline-software.moscow"
 ```
-3. **Подпись csr у субъектов A и B **
+3. **Подпись csr у субъектов A и B**
 ```bash
 aktool k -s subject_a.csr --ca-key test_ca.key --ca-cert test_ca.crt \
    --op subject_a.crt --to pem --days 365
@@ -43,7 +43,7 @@ aktool k -s subject_a.csr --ca-key test_ca.key --ca-cert test_ca.crt \
 aktool k -s subject_b.csr --ca-key test_ca.key --ca-cert test_ca.crt \
    --op subject_b.crt --to pem --days 365
 ```
-4. **Убедитесь, что сделали се операции верно**
+4. **Убедитесь, что сделали все операции верно**
 ```bash
 aktool -v test_ca.crt --verbose
 ```
