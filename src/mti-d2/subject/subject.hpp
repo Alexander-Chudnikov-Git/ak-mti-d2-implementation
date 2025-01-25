@@ -478,7 +478,12 @@ private:
     const char* m_id_s = {nullptr};///< Идентификатор локального субъекта
     const char* m_id_e = {nullptr};///< Идентификатор внешнего субъекта
 
-    /** s stands for 'self' and e for 'extern', so is subject is A, then 's -> a' 'e -> b' **/
+    /**
+    s обозначает "сам" (self), и e — "внешний" (extern).
+    Таким образом, если субъект — это A, то:
+    's -> a' (self ссылается на a),
+    'e -> b' (extern ссылается на b).
+    **/
     ak_uint64 m_Xi_s_key[4] = {0}; ///< ξ_a
     ak_uint64 m_Xi_e_key[4] = {0}; ///< ξ_b
     ak_uint64 m_Xi_se_key[4] = {0}; ///< ξ_ab

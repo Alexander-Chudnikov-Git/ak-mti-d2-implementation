@@ -58,52 +58,54 @@ public:
 };
 
 /**
- * @brief      Шаг идентификации субъекта A
+ * @brief      Шаг идентификации субъекта A в протоколе MTI-D2
+ *
+ *             Выполняет последовательность операций:
+ *             1. Извлечение серийного номера субъекта A
+ *             2. Установка идентификатора эллиптической кривой для внешнего участника
+ *             3. Вычисление точки E_a = ξ_a * P
+ *             4. Передачу параметров субъекту B
+ *             5. Проверка точки E_b и поиск сертификата
+ *
+ * @details    Этапы работы:
+ *             - enter:   Подготовка параметров субъекта A
+ *             - execute: Передача параметров субъекту B
+ *             - exit:    Верификация полученных данных
+ *
  */
 class IdentifySubjectA : public ExchangerStep
 {
 public:
-    /**
-     * @brief      Подготовительная фаза
-     * @return     true если подготовка успешна
-     */
+
     bool enter([[maybe_unused]] Subject& subject_a,   [[maybe_unused]] Subject& subject_b) override;
     
-    /**
-     * @brief      Основная логика
-     * @return     true если шаг выполнен успешно
-     */
     bool execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) override;
     
-    /**
-     * @brief      Завершающая фаза
-     * @return     true если завершение прошло без ошибок
-     */
     bool exit([[maybe_unused]] Subject& subject_a,    [[maybe_unused]] Subject& subject_b) override;
 };
 
 /**
- * @brief      Шаг запроса сертификата субъекта A
+ * @brief      Шаг запроса и верификации сертификата субъекта A
+ *
+ *             Выполняет операции:
+ *             1. Проверку необходимости запроса сертификата
+ *             2. Извлечение серийного номера УЦ от субъекта B
+ *             3. Установку параметров кривой для проверки
+ *             4. Верификацию 
+ *
+ * @details    Особенности работы:
+ *             - Шаг может быть пропущен, если сертификат уже доступен (m_skip)
+ *             - Выполняет проверку целостности по сертификату УЦ
+ *
  */
 class RequestCertificateA : public ExchangerStep
 {
 public:
-    /**
-     * @brief      Подготовительная фаза
-     * @return     true если подготовка успешна
-     */
+
     bool enter([[maybe_unused]] Subject& subject_a,   [[maybe_unused]] Subject& subject_b) override;
     
-    /**
-     * @brief      Основная логика
-     * @return     true если шаг выполнен успешно
-     */
     bool execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) override;
     
-    /**
-     * @brief      Завершающая фаза
-     * @return     true если завершение прошло без ошибок
-     */
     bool exit([[maybe_unused]] Subject& subject_a,    [[maybe_unused]] Subject& subject_b) override;
 
 private:
@@ -112,126 +114,86 @@ private:
 
 /**
  * @brief      Шаг обработки сертификата субъекта A
+ *
+ *             Выполняет полный цикл операций с сертификатом субъекта A:
+ *             1. Верификацию и параметров кривой
+ *             2. Генерацию ключевых параметров для протокола
+ *             3. Вычисление проверочных точек
+ *             4. Подготовку к формированию общего секрета
+ *
+ * @details    Основные этапы:
+ *             - enter:   Проверка сертификата и извлечение параметров
+ *             - execute: Генерация криптографических параметров и вычисление точек
+ *             - exit:    Подготовка к ключеому согласованию (KDF/шифрование)
+ *
+ * @warning    Для корректной работы требует успешного выполнения предыдущих шагов:
+ *             - IdentifySubjectA
+ *             - RequestCertificateA
  */
 class SubjectCertificateA : public ExchangerStep
 {
 public:
-    /**
-     * @brief      Подготовительная фаза
-     * @return     true если подготовка успешна
-     */
+
     bool enter([[maybe_unused]] Subject& subject_a,   [[maybe_unused]] Subject& subject_b) override;
     
-    /**
-     * @brief      Основная логика
-     * @return     true если шаг выполнен успешно
-     */
     bool execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) override;
-    
-    /**
-     * @brief      Завершающая фаза
-     * @return     true если завершение прошло без ошибок
-     */
+
     bool exit([[maybe_unused]] Subject& subject_a,    [[maybe_unused]] Subject& subject_b) override;
 };
 
 /**
- * @brief      Шаг идентификации субъекта B
+ * @brief      Шаг идентификации субъекта B [!]
  */
 class IdentifySubjectB : public ExchangerStep
 {
 public:
-    /**
-     * @brief      Подготовительная фаза
-     * @return     true если подготовка успешна
-     */
+
     bool enter(Subject& subject_a, Subject& subject_b) override;
-    
-    /**
-     * @brief      Основная логика
-     * @return     true если шаг выполнен успешно
-     */
+
     bool execute(Subject& subject_a, Subject& subject_b) override;
-    
-    /**
-     * @brief      Завершающая фаза
-     * @return     true если завершение прошло без ошибок
-     */
+
     bool exit(Subject& subject_a, Subject& subject_b) override;
 };
 
 /**
- * @brief      Шаг идентификации субъекта B по сертификату
+ * @brief      Шаг идентификации субъекта B по сертификату [!]
  */
 class IdentifySubjectWithCertificateB : public ExchangerStep
 {
 public:
-    /**
-     * @brief      Подготовительная фаза
-     * @return     true если подготовка успешна
-     */
+
     bool enter(Subject& subject_a, Subject& subject_b) override;
-    
-    /**
-     * @brief      Основная логика
-     * @return     true если шаг выполнен успешно
-     */
+
     bool execute(Subject& subject_a, Subject& subject_b) override;
     
-    /**
-     * @brief      Завершающая фаза
-     * @return     true если завершение прошло без ошибок
-     */
     bool exit(Subject& subject_a, Subject& subject_b) override;
 };
 
 
 /**
- * @brief      Шаг аутентификации субъекта A
+ * @brief      Шаг аутентификации субъекта A [!]
  */
 class SubjectAuthenticateA : public ExchangerStep
 {
 public:
-    /**
-     * @brief      Подготовительная фаза
-     * @return     true если подготовка успешна
-     */
     bool enter(Subject& subject_a, Subject& subject_b) override;
-    
-    /**
-     * @brief      Основная логика
-     * @return     true если шаг выполнен успешно
-     */
+
     bool execute(Subject& subject_a, Subject& subject_b) override;
-    
-    /**
-     * @brief      Завершающая фаза
-     * @return     true если завершение прошло без ошибок
-     */
+
     bool exit(Subject& subject_a, Subject& subject_b) override;
 };
 
 /**
- * @brief      Шаг аутентификации субъекта B
+ * @brief      Шаг аутентификации субъекта B [!]
  */
 class SubjectAuthenticateB : public ExchangerStep
 {
 public:
-    /**
-     * @brief      Подготовительная фаза
-     * @return     true если подготовка успешна
-     */
+
     bool enter(Subject& subject_a, Subject& subject_b) override;
-    /**
-     * @brief      Основная логика
-     * @return     true если шаг выполнен успешно
-     */
+
     bool execute(Subject& subject_a, Subject& subject_b) override;
 
-    /**
-     * @brief      Завершающая фаза
-     * @return     true если завершение прошло без ошибок
-     */
     bool exit(Subject& subject_a, Subject& subject_b) override;
 };
 

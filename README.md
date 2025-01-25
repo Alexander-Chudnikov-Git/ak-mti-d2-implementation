@@ -1,31 +1,31 @@
 # ak-mti-d2-implementation
 
-This project is designed for showcasing and testing MTI/MD2 key exchange algorithm using the `libakrypt` library. It provides functionality to exchange keys between multiple subjects, utilizing MTI/MD2 algorithm.
+Этот проект предназначен для демонстрации и тестирования алгоритма обмена ключами MTI/MD2 с использованием библиотеки libcrypt. Он предоставляет функциональность для обмена ключами между несколькими субъектами, используя алгоритм MTI/MD2.
 
-## Features
+## Функционал
 
-- **Command-Line Interface:** Uses `cxxopts` for easy command-line argument parsing.
-- **Logging:** Employs `spdlog` for informative logging during execution.
+- **Интерфейс командной строки:** Использует `cxxopts` для простоты анализа аргументов командной строки.
+- **Логгирование:** Использует `spdlog` для информативного ведения логов во время выполнения.
 
-## Dependencies
+## Зависимости
 
-- **libakrypt:** A cryptographic library used for certificate parsing and operations.
-- **cxxopts:** A lightweight C++ library for command-line argument parsing.
-- **spdlog:** A fast and flexible logging library.
+- **libakrypt:** Криптографическая библиотека, используемая для анализа сертификатов и выполнения операций с ними.
+- **cxxopts:** Библиотека C++ для анализа аргументов командной строки.
+- **spdlog:** Быстрая и гибкая библиотека ведения логов.
 
-## Generating new certificates
+## Генерация новых сертификатов
 
-This project does not currently provide embeded tools for generating certificates.
-In order to generate new ones, you can use aktool, provided inside libakrypt library.
+В настоящее время этот проект не предоставляет встроенных инструментов для создания сертификатов.
+Для создания новых сертификатов вы можете использовать aktool, предоставляемый в библиотеке libcrypt.
 
-Here's simple guide for generating all of the nessesary stuff for
-1. **Generate self signed certificate and key pair**
+Вот простое руководство по созданию всего необходимого для:
+1. **Генерация самозаверяющего сертификата и пары ключей**
 ```bash
 aktool k -nt sign512 --curve ec512b -o test_ca.key --op test_ca.crt \
    --to certificate --days 3650 --ca \
    --id "/cn=Example CA/ct=RU/st=Москва/ot=Blueline Software"
 ```
-2. **Generate subject A and B csr and key pair**
+2. **Сгенерируйте csr субъектов A и B и пары ключей**
 ```bash
 aktool k -nt sign256 -o subject_a.key --op subject_a.csr --to pem \
    --id "/cn=Subject A/ct=RU/em=subject_a@blueline-software.moscow"
@@ -34,7 +34,7 @@ aktool k -nt sign256 -o subject_a.key --op subject_a.csr --to pem \
 aktool k -nt sign256 -o subject_b.key --op subject_b.csr --to pem \
    --id "/cn=Subject B/ct=RU/em=subject_b@blueline-software.moscow"
 ```
-3. **Sign subject A and B csr**
+3. **Подпись csr у субъектов A и B **
 ```bash
 aktool k -s subject_a.csr --ca-key test_ca.key --ca-cert test_ca.crt \
    --op subject_a.crt --to pem --days 365
@@ -43,7 +43,7 @@ aktool k -s subject_a.csr --ca-key test_ca.key --ca-cert test_ca.crt \
 aktool k -s subject_b.csr --ca-key test_ca.key --ca-cert test_ca.crt \
    --op subject_b.crt --to pem --days 365
 ```
-4. **Make sure you didn't fuckup anywhere**
+4. **Убедитесь, что сделали се операции верно**
 ```bash
 aktool -v test_ca.crt --verbose
 ```
@@ -54,33 +54,32 @@ aktool -v subject_a.crt --verbose
 aktool -v subject_b.crt --verbose
 ```
 
-## Usage
+## Использование
 
-Example:
+Пример:
 ```bash
 ./build/ak-mti-d2-utility -c ./res/test_ca.crt -a ./res/subject_a.crt -b ./res/subject_b.crt -A ./res/subject_a.key -B ./res/subject_b.key -d
 ```
 
-Password for importing all keys is 'test'.
+Пароль для импорта всех ключей 'test'.
 
 
-## Building
+## Сборка
 
-This project uses CMake as its build system. To build the project, follow these steps:
+В этом проекте в качестве системы сборки используется CMake. Чтобы собрать проект, выполните следующие действия:
 
-1. **Navigate to the project's root directory:**
+1. **Перейдите в корневой каталог проекта:**
 ```bash
 cd path/to/ak-mti-d2-implementation
 ```
 
-2. **Create a build directory and build**
+2. **Создайте каталог сборки и начните сборку проекта**
 ```bash
 cmake . -B ./build/ && cmake --build ./build -j 10
 ```
 
-This will create a build directory and generate the executable within it.
+Это создаст каталог 'build' и сгенерирует исполняемый файл внутри него.
 
-## License
+## Лицензия
 
-Well, I don't give a fuck about licensing and stuff, the only thing i despise is propietary bullshit,
-so I guess you can call it GNU license.
+Проект распространяется под лицензией GNUv3. 

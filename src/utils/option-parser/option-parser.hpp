@@ -21,13 +21,13 @@
 #ifndef OPTION_PARSER_HPP
 #define OPTION_PARSER_HPP
 
-#include <cxxopts.hpp> ///< Библиотека для парсинга параметров командной строки
+#include <cxxopts.hpp> 
 #include <memory>
 #include <string>
 #include <type_traits>
 
-#include <spdlog/spdlog.h> ///< Библиотека для вывода логов в командной строке
-#include <spdlog/sinks/stdout_color_sinks.h> ///< Цветной вывод данных
+#include <spdlog/spdlog.h> 
+#include <spdlog/sinks/stdout_color_sinks.h> 
 
 namespace UTILS
 {
