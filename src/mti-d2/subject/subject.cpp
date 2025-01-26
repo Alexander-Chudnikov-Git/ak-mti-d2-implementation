@@ -204,6 +204,8 @@ bool Subject::calculateEPoint()
 
     ak_wpoint_pow(&this->m_E_s_point, &pubkey_wcurve->point, this->m_Xi_s_key, sizeof(this->m_Xi_s_key), pubkey_wcurve);
 
+    ak_wpoint_reduce(&this->m_E_s_point, pubkey_wcurve);
+
     spdlog::info(" {} E_s point:", this->m_subject_name);
     UTILS::AkryptHelper::logWPoint(this->m_E_s_point, ak_mpzn256_size);
 
@@ -221,6 +223,8 @@ bool Subject::calculateСPoint()
     this->m_С_s_point = this->m_Q_e_point;
 
     ak_wpoint_add(&this->m_С_s_point, &this->m_E_e_point, this->m_cert_e.get()->vkey.wc);
+
+    ak_wpoint_reduce(&this->m_С_s_point, this->m_cert_e.get()->vkey.wc);
 
     spdlog::info(" {} C_e point:", this->m_subject_name);
     UTILS::AkryptHelper::logWPoint(this->m_С_s_point, ak_mpzn256_size);
@@ -244,6 +248,8 @@ bool Subject::calculateQPoint()
     ak_wpoint_pow(&temp_point_2, &this->m_С_s_point, reinterpret_cast<ak_uint64 *>(this->m_d_s_key.get()->key), (this->m_d_s_key.get()->key_size / 4), this->m_cert_s.get()->vkey.wc); ///< Yeah, looks painfull
     ak_wpoint_set_wpoint(&this->m_Q_se_point, &temp_point_1, this->m_cert_s.get()->vkey.wc);
     ak_wpoint_add(&this->m_Q_se_point, &temp_point_2, this->m_cert_s.get()->vkey.wc);
+
+    ak_wpoint_reduce(&this->m_Q_se_point, this->m_cert_s.get()->vkey.wc);
 
     spdlog::info("{} Q_se point:", this->m_subject_name);
     UTILS::AkryptHelper::logWPoint(this->m_Q_se_point, ak_mpzn256_size);
