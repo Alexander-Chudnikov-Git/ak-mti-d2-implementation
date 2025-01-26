@@ -212,7 +212,25 @@ bool SubjectCertificateA::exit([[maybe_unused]] Subject& subject_a, [[maybe_unus
         return false;
     }
 
-    ///< Implement kdf and enc here
+    if (!subject_b.getIdentifierS())
+    {
+        return false;
+    }
+
+    if (!subject_b.getIdentifierE())
+    {
+        return false;
+    }
+
+    if (!subject_b.generateHValue())
+    {
+        return false;
+    }
+
+    if (!subject_b.generateHMAC())
+    {
+        return false;
+    }
 
     spdlog::info("-----------------------------------------------------------");
 

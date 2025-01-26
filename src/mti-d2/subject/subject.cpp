@@ -5,7 +5,7 @@
 
 namespace MTI_D2
 {
-Subject::Subject(const std::string& subject_name,
+/*Subject::Subject(const std::string& subject_name,
                  UTILS::AkryptCertificate cert_ca,
                  UTILS::AkryptCertificate cert_s,
                  UTILS::AkryptSkey d_s_key,
@@ -14,7 +14,7 @@ Subject::Subject(const std::string& subject_name,
     m_initialized(false)
 {
       this->initSubject(cert_ca, cert_s, d_s_key, {nullptr}, id_e);
-}
+}*/
 
 Subject::Subject(const std::string& subject_name,
                  UTILS::AkryptCertificate cert_ca,
@@ -24,7 +24,7 @@ Subject::Subject(const std::string& subject_name,
     m_subject_name(subject_name),
     m_initialized(false)
 {
-      this->initSubject(cert_ca, cert_s, d_s_key, cert_e, {});
+      this->initSubject(cert_ca, cert_s, d_s_key, cert_e/*, {}*/);
 }
 
 Subject::~Subject()
@@ -41,8 +41,8 @@ Subject::~Subject()
 void Subject::initSubject(UTILS::AkryptCertificate cert_ca,
                           UTILS::AkryptCertificate cert_s,
                           UTILS::AkryptSkey d_s_key,
-                          UTILS::AkryptCertificate cert_e,
-                          const char* id_e)
+                          UTILS::AkryptCertificate cert_e/*,
+                          const char* id_e*/)
 {
     if (cert_ca.isInitialized())
     {
@@ -69,7 +69,7 @@ void Subject::initSubject(UTILS::AkryptCertificate cert_ca,
         this->m_req_s = true;
     }
 
-    this->m_id_e = id_e;
+    /*this->m_id_e = id_e;*/
 
     spdlog::info(" Subject '{}' initialized.", this->m_subject_name);
 
@@ -512,6 +512,102 @@ bool Subject::verifyPDiff()
         return false;
     }
     spdlog::info(" C_e and P differ. Subject {}.", this->m_subject_name);
+
+    return true;
+}
+
+bool Subject::getIdentifierS()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to extract self certificate ID. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    std::memcpy(this->m_id_s, ak_tlv_get_string_from_global_name(this->m_cert_s.get()->opts.subject, "2.5.4.3", NULL), this->m_cert_s.get()->opts.subject->len);
+
+    spdlog::info(" Certificate self subject name {}. Subject {}.", this->m_id_s, this->m_subject_name);
+
+    return true;
+}
+
+bool Subject::getIdentifierE()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to extract self certificate ID. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    std::memcpy(this->m_id_e, ak_tlv_get_string_from_global_name(this->m_cert_e.get()->opts.subject, "2.5.4.3", NULL), this->m_cert_e.get()->opts.subject->len);
+
+    spdlog::info(" Certificate self subject name {}. Subject {}.", this->m_id_e, this->m_subject_name);
+
+    return true;
+}
+
+bool Subject::generateHValue()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate H value. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    const std:;string E_s_string = UTILS::AkryptHelper::makePointsToString(this->m_E_s_point, ak_mpzn256_size);
+    const std:;string E_e_string = UTILS::AkryptHelper::makePointsToString(this->m_E_e_point, ak_mpzn256_size);
+
+    std::stringstream ss;
+
+    ss << this->m_id_s << E_s_string << this->m_id_e << E_e_string;
+
+    std::memcpy(this->m_H_s, ss.str().c_str(), ss.str().size());
+    spdlog::info(" HMAC H value generated {}. Subject {}.", ss.str(), this->m_subject_name);
+
+    return true;
+}
+
+bool Subject::generateHMAC()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate HMAC Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    ak_oid streebog_oid;
+    ak_pointer streebog_ptr;
+
+    streebog_oid = ak_oid_find_by_name("hmac-streebog512");
+    streebog_ptr = ak_oid_new_object(streebog_oid);
+
+    ak_uint8 buffer[128];
+
+    const std::string password = UTILS::AkryptHelper::makePointsToString(this->m_Q_se_point, ak_mpzn256_size);
+    const std::string hash = UTILS::AkryptManager::getInstance().getHMACSeed();
+
+    ak_hmac_set_key_from_password(streebog_ptr, password.c_str(), password.size(), hash.c_str(), hash.size());
+    std::memset(buffer, 0, sizeof(buffer));
+
+    ak_hmac_ptr(streebog_ptr, this->m_H_s, sizeof(this->m_H_s), buffer, sizeof(buffer));
+
+    std::string hmac_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size(streebog_ptr), ak_false);
+
+    spdlog::info(" HMAC generated {}. Subject {}.", hmac_result, this->m_subject_name);
+
+    std::string X_s_val(hmac_result, 0, 64); 
+    std::string Y_s_val(hmac_result, 64, 64); 
+
+    std::memcpy(this->m_X_s, X_s_val.c_str(), X_s_val.size());
+    std::memcpy(this->m_Y_s, Y_s_val.c_str(), Y_s_val.size());
+
+    const std::string vba_value = UTILS::AkryptManager::getInstance().getVBAvalue();
+    const std::string vab_value = UTILS::AkryptManager::getInstance().getVABvalue();
+
+    std::memcpy(this->m_v_se, vab_value.c_str(), vab_value.size());
+    std::memcpy(this->m_v_es, vba_value.c_str(), vba_value.size());
+
+    spdlog::info(" X_s||Y_s||v_e||v_es = {}||{}||{}||{}.", this->m_X_s, this->m_Y_s, this->m_v_se, this->m_v_es);
 
     return true;
 }

@@ -12,11 +12,11 @@ class Subject
 {
 public:
     Subject() = default;
-    Subject(const std::string& subject_name,
+    /*Subject(const std::string& subject_name,
             UTILS::AkryptCertificate cert_ca,
             UTILS::AkryptCertificate cert_s,
             UTILS::AkryptSkey d_s_key,
-            const char* id_e); ///< Не реализовано на данный момент
+            const char* id_e); ///< Не реализовано на данный момент*/
     Subject(const std::string& subject_name,
             UTILS::AkryptCertificate cert_ca,
             UTILS::AkryptCertificate cert_s,
@@ -27,8 +27,8 @@ public:
     void initSubject(UTILS::AkryptCertificate cert_ca,
                      UTILS::AkryptCertificate cert_s,
                      UTILS::AkryptSkey d_s_key,
-                     UTILS::AkryptCertificate cert_e = {nullptr},
-                     const char* id_e = {});
+                     UTILS::AkryptCertificate cert_e = {nullptr}/*,
+                     const char* id_e = {}*/);
 
     void initLibAkrypt();
 
@@ -49,6 +49,10 @@ public:
     bool verifyExternCa();
     bool verifyXDiff();
     bool verifyPDiff();
+    bool getIdentifierS();
+    bool getIdentifierE();
+    bool generateHValue();
+    bool generateHMAC();
 
 public:
     void setE_s_point(const wpoint& E_s_point);
@@ -103,8 +107,16 @@ private:
     UTILS::AkryptCertificate m_cert_e  = {nullptr};
     UTILS::AkryptSkey        m_d_s_key = {nullptr};
 
-    const char* m_id_s = {nullptr};
-    const char* m_id_e = {nullptr};
+    char* m_id_s = {nullptr};
+    char* m_id_e = {nullptr};
+
+    char* m_H_s = {nullptr};
+
+    char* m_X_s = {nullptr};
+    char* m_Y_s = {nullptr};
+
+    char* m_v_se = {nullptr};
+    char* m_v_es = {nullptr};
 
     /** s stands for 'self' and e for 'extern', so is subject is A, then 's -> a' 'e -> b' **/
     ak_uint64 m_Xi_s_key[4] = {0}; ///< ξ_a
@@ -136,6 +148,8 @@ private:
 
     wcurve_id_t m_s_wc_id; ///< e_a
     wcurve_id_t m_e_wc_id; ///< e_b
+
+
 };
 }
 
