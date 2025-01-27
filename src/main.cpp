@@ -95,8 +95,9 @@ int main(const int argc, const char** argv)
 
     UTILS::AkryptManager::getInstance().setHMACSeed("random_hmac_seed");
 
-    // Must be 32 symbols;
-    UTILS::AkryptManager::getInstance().setUVvalue("random_uv_value_1234567890987654");
+    // Must be 32 symbols; [string here to bypass & error]
+    std::string UValue32 = "random_uv_value_1234567890987654";
+    UTILS::AkryptManager::getInstance().setUVvalue(UValue32);
 
     auto exchanger = MTI_D2::Exchanger();
 

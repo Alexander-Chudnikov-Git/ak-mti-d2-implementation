@@ -237,7 +237,157 @@ bool SubjectCertificateA::exit([[maybe_unused]] Subject& subject_a, [[maybe_unus
     return true;
 }
 
+// ================ IdentifySubjectB ================
 
+bool IdentifySubjectB::enter([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b)
+{
+    spdlog::info("-----------------------------------------------------------");
+
+    if (!subject_b.extractSerialNumber())
+    {
+        return false;
+    }
+
+    if (!subject_b.generateRandomXiScalar())
+    {
+        return false;
+    }
+
+    if (!subject_b.calculateEPoint())
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool IdentifySubjectB::execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b)
+{
+    spdlog::info("                                                           ");
+
+    ak_uint8 serialnum[32] = {0};
+    auto serialnum_len = subject_a.getN_s_num_len();
+
+    if (serialnum_len > sizeof(serialnum))
+    {
+        return false;
+    }
+
+    subject_a.setReq_e(subject_a.getReq_s());
+    subject_a.setN_e_num(subject_a.getN_s_num(), serialnum_len);
+    subject_a.setE_e_point(subject_a.getE_s_point());
+
+    spdlog::info("                                                           ");
+
+    return true;
+}
+
+bool IdentifySubjectB::exit([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b)
+{
+    if (!subject_a.checkExternEPoint())
+    {
+        return false;
+    }
+
+    if (!subject_a.findExternCert())
+    {
+        return false;
+    }
+
+    spdlog::info("-----------------------------------------------------------");
+
+    return true;
+}
+
+// ================ IdentifySubjectWithCertificateB ================
+
+bool IdentifySubjectWithCertificateB::enter(Subject& subject_a, Subject& subject_b) 
+{
+    spdlog::info("-----------------------------------------------------------");
+
+    // паб ключ из сертификата а
+    if(!subject_b.extractExternPublicKey()) {
+        spdlog::error(" Subject B: Failed to extract A's public key");
+        return false;
+    }
+
+    // TODO: Implement
+
+    return true;
+}
+
+bool IdentifySubjectWithCertificateB::execute(Subject& subject_a, Subject& subject_b) 
+{
+    spdlog::info("-----------------------------------------------------------");
+
+    // TODO: Implement
+
+    return true;
+}
+
+bool IdentifySubjectWithCertificateB::exit(Subject& subject_a, Subject& subject_b) 
+{
+    spdlog::info("-----------------------------------------------------------");
+
+    // TODO: Implement
+
+    return true;
+}
+
+// ================ SubjectAuthenticateA ================
+
+bool SubjectAuthenticateA::enter(Subject& subject_a, Subject& subject_b) {
+    spdlog::info("-----------------------------------------------------------");
+
+    // TODO: Implement
+    
+    return true; 
+}
+
+bool SubjectAuthenticateA::execute(Subject& subject_a, Subject& subject_b) {
+    spdlog::info("-----------------------------------------------------------");
+
+    // TODO: Implement 
+    
+    return true; 
+}
+
+bool SubjectAuthenticateA::exit(Subject& subject_a, Subject& subject_b) {
+    spdlog::info("-----------------------------------------------------------");
+
+    // TODO: Implement
+    
+    spdlog::info("-----------------------------------------------------------");
+    return true; 
+}
+
+// ================ SubjectAuthenticateB ================
+
+bool SubjectAuthenticateB::enter(Subject& subject_a, Subject& subject_b) {
+    spdlog::info("-----------------------------------------------------------");
+
+    // TODO: Implement
+    
+    return true; 
+}
+
+bool SubjectAuthenticateB::execute(Subject& subject_a, Subject& subject_b) {
+    spdlog::info("-----------------------------------------------------------");
+
+    // TODO: Implement
+    
+    return true; 
+}
+
+bool SubjectAuthenticateB::exit(Subject& subject_a, Subject& subject_b) {
+    spdlog::info("-----------------------------------------------------------");
+
+
+    // TODO: Implement
+    
+    spdlog::info("-----------------------------------------------------------");
+    return true; 
+}
 
 // ================ Exchanger ================
 

@@ -554,8 +554,8 @@ bool Subject::generateHValue()
         return false;
     }
 
-    const std:;string E_s_string = UTILS::AkryptHelper::makePointsToString(this->m_E_s_point, ak_mpzn256_size);
-    const std:;string E_e_string = UTILS::AkryptHelper::makePointsToString(this->m_E_e_point, ak_mpzn256_size);
+    const std::string E_s_string = UTILS::AkryptHelper::makePointsToString(this->m_E_s_point, ak_mpzn256_size);
+    const std::string E_e_string = UTILS::AkryptHelper::makePointsToString(this->m_E_e_point, ak_mpzn256_size);
 
     std::stringstream ss;
 
@@ -586,12 +586,12 @@ bool Subject::generateHMAC()
     const std::string password = UTILS::AkryptHelper::makePointsToString(this->m_Q_se_point, ak_mpzn256_size);
     const std::string hash = UTILS::AkryptManager::getInstance().getHMACSeed();
 
-    ak_hmac_set_key_from_password(streebog_ptr, password.c_str(), password.size(), hash.c_str(), hash.size());
+    ak_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)password.c_str(), password.size(), (void*)hash.c_str(), hash.size());
     std::memset(buffer, 0, sizeof(buffer));
 
-    ak_hmac_ptr(streebog_ptr, this->m_H_s, sizeof(this->m_H_s), buffer, sizeof(buffer));
+    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H_s, sizeof(this->m_H_s), buffer, sizeof(buffer));
 
-    std::string hmac_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size(streebog_ptr), ak_false);
+    std::string hmac_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size((ak_hmac)streebog_ptr), ak_false);
 
     spdlog::info(" HMAC generated {}. Subject {}.", hmac_result, this->m_subject_name);
 
