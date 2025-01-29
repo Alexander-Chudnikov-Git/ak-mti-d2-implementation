@@ -301,7 +301,7 @@ bool IdentifySubjectB::exit([[maybe_unused]] Subject& subject_a, [[maybe_unused]
 
 // ================ IdentifySubjectWithCertificateB ================
 
-bool IdentifySubjectWithCertificateB::enter(Subject& subject_a, Subject& subject_b) 
+bool IdentifySubjectWithCertificateB::enter([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b)
 {
     spdlog::info("-----------------------------------------------------------");
 
@@ -316,7 +316,7 @@ bool IdentifySubjectWithCertificateB::enter(Subject& subject_a, Subject& subject
     return true;
 }
 
-bool IdentifySubjectWithCertificateB::execute(Subject& subject_a, Subject& subject_b) 
+bool IdentifySubjectWithCertificateB::execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]]  Subject& subject_b)
 {
     spdlog::info("-----------------------------------------------------------");
 
@@ -325,7 +325,7 @@ bool IdentifySubjectWithCertificateB::execute(Subject& subject_a, Subject& subje
     return true;
 }
 
-bool IdentifySubjectWithCertificateB::exit(Subject& subject_a, Subject& subject_b) 
+bool IdentifySubjectWithCertificateB::exit([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b)
 {
     spdlog::info("-----------------------------------------------------------");
 
@@ -336,57 +336,57 @@ bool IdentifySubjectWithCertificateB::exit(Subject& subject_a, Subject& subject_
 
 // ================ SubjectAuthenticateA ================
 
-bool SubjectAuthenticateA::enter(Subject& subject_a, Subject& subject_b) {
+bool SubjectAuthenticateA::enter([[maybe_unused]] Subject& subject_a, [[maybe_unused]]  Subject& subject_b) {
     spdlog::info("-----------------------------------------------------------");
 
     // TODO: Implement
-    
-    return true; 
+
+    return true;
 }
 
-bool SubjectAuthenticateA::execute(Subject& subject_a, Subject& subject_b) {
-    spdlog::info("-----------------------------------------------------------");
-
-    // TODO: Implement 
-    
-    return true; 
-}
-
-bool SubjectAuthenticateA::exit(Subject& subject_a, Subject& subject_b) {
+bool SubjectAuthenticateA::execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) {
     spdlog::info("-----------------------------------------------------------");
 
     // TODO: Implement
-    
+
+    return true;
+}
+
+bool SubjectAuthenticateA::exit([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) {
     spdlog::info("-----------------------------------------------------------");
-    return true; 
+
+    // TODO: Implement
+
+    spdlog::info("-----------------------------------------------------------");
+    return true;
 }
 
 // ================ SubjectAuthenticateB ================
 
-bool SubjectAuthenticateB::enter(Subject& subject_a, Subject& subject_b) {
+bool SubjectAuthenticateB::enter([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) {
     spdlog::info("-----------------------------------------------------------");
 
     // TODO: Implement
-    
-    return true; 
+
+    return true;
 }
 
-bool SubjectAuthenticateB::execute(Subject& subject_a, Subject& subject_b) {
+bool SubjectAuthenticateB::execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) {
     spdlog::info("-----------------------------------------------------------");
 
     // TODO: Implement
-    
-    return true; 
+
+    return true;
 }
 
-bool SubjectAuthenticateB::exit(Subject& subject_a, Subject& subject_b) {
+bool SubjectAuthenticateB::exit([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) {
     spdlog::info("-----------------------------------------------------------");
 
 
     // TODO: Implement
-    
+
     spdlog::info("-----------------------------------------------------------");
-    return true; 
+    return true;
 }
 
 // ================ Exchanger ================

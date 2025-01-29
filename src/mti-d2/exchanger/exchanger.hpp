@@ -50,33 +50,33 @@ public:
 class IdentifySubjectB : public ExchangerStep
 {
 public:
-    bool enter(Subject& subject_a, Subject& subject_b) override;
-    bool execute(Subject& subject_a, Subject& subject_b) override;
-    bool exit(Subject& subject_a, Subject& subject_b) override;
+    bool enter([[maybe_unused]] Subject& subject_a,   [[maybe_unused]] Subject& subject_b) override;
+    bool execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) override;
+    bool exit([[maybe_unused]] Subject& subject_a,    [[maybe_unused]] Subject& subject_b) override;
 };
 
 class IdentifySubjectWithCertificateB : public ExchangerStep
 {
 public:
-    bool enter(Subject& subject_a, Subject& subject_b) override;
-    bool execute(Subject& subject_a, Subject& subject_b) override;
-    bool exit(Subject& subject_a, Subject& subject_b) override;
+    bool enter([[maybe_unused]] Subject& subject_a,   [[maybe_unused]] Subject& subject_b) override;
+    bool execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) override;
+    bool exit([[maybe_unused]] Subject& subject_a,    [[maybe_unused]] Subject& subject_b) override;
 };
 
 class SubjectAuthenticateA : public ExchangerStep
 {
 public:
-    bool enter(Subject& subject_a, Subject& subject_b) override;
-    bool execute(Subject& subject_a, Subject& subject_b) override;
-    bool exit(Subject& subject_a, Subject& subject_b) override;
+    bool enter([[maybe_unused]] Subject& subject_a,   [[maybe_unused]] Subject& subject_b) override;
+    bool execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) override;
+    bool exit([[maybe_unused]] Subject& subject_a,    [[maybe_unused]] Subject& subject_b) override;
 };
 
 class SubjectAuthenticateB : public ExchangerStep
 {
 public:
-    bool enter(Subject& subject_a, Subject& subject_b) override;
-    bool execute(Subject& subject_a, Subject& subject_b) override;
-    bool exit(Subject& subject_a, Subject& subject_b) override;
+    bool enter([[maybe_unused]] Subject& subject_a,   [[maybe_unused]] Subject& subject_b) override;
+    bool execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) override;
+    bool exit([[maybe_unused]] Subject& subject_a,    [[maybe_unused]] Subject& subject_b) override;
 };
 
 class Exchanger

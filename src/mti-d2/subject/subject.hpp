@@ -22,6 +22,7 @@ public:
             UTILS::AkryptCertificate cert_s,
             UTILS::AkryptSkey d_s_key,
             UTILS::AkryptCertificate cert_e);
+
     ~Subject();
 
     void initSubject(UTILS::AkryptCertificate cert_ca,
@@ -148,8 +149,6 @@ private:
 
     wcurve_id_t m_s_wc_id; ///< e_a
     wcurve_id_t m_e_wc_id; ///< e_b
-
-
 };
 }
 

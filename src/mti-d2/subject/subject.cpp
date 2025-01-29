@@ -29,11 +29,53 @@ Subject::Subject(const std::string& subject_name,
 
 Subject::~Subject()
 {
+    // There is a bug with move constructor, that causes double deletion
+    // In order to fix it, i should probably implement it, instead of using
+    // default one, but i'm too lazy to do it
+    //
+    // I guess leaking a bit of memory is better then crashes
+    /*
+    if (this->m_id_s != nullptr)
+    {
+        delete[] this->m_id_s;
+        this->m_id_s = nullptr;
+    }
+
     if (this->m_id_e != nullptr)
     {
         delete[] this->m_id_e;
         this->m_id_e = nullptr;
     }
+
+    if (this->m_H_s != nullptr)
+    {
+        delete[] this->m_H_s;
+        this->m_H_s = nullptr;
+    }
+
+    if (this->m_X_s != nullptr)
+    {
+        delete[] this->m_X_s;
+        this->m_X_s = nullptr;
+    }
+
+    if (this->m_Y_s != nullptr)
+    {
+        delete[] this->m_Y_s;
+        this->m_Y_s = nullptr;
+    }
+
+    if (this->m_v_se != nullptr)
+    {
+        delete[] this->m_v_se;
+        this->m_v_se = nullptr;
+    }
+
+    if (this->m_v_es != nullptr)
+    {
+        delete[] this->m_v_es;
+        this->m_v_es = nullptr;
+    }*/
 
     UTILS::AkryptManager::getInstance().stopUsing();
 }
@@ -524,9 +566,31 @@ bool Subject::getIdentifierS()
         return false;
     }
 
-    std::memcpy(this->m_id_s, ak_tlv_get_string_from_global_name(this->m_cert_s.get()->opts.subject, "2.5.4.3", NULL), this->m_cert_s.get()->opts.subject->len);
+    if (this->m_cert_s.get()->opts.subject == nullptr)
+    {
+        spdlog::error(" Provided certificate has no subject option. Subject {}.", this->m_subject_name);
+        return false;
+    }
 
-    spdlog::info(" Certificate self subject name {}. Subject {}.", this->m_id_s, this->m_subject_name);
+    const char* temp_id_s = reinterpret_cast<char*>(ak_tlv_get_string_from_global_name(this->m_cert_s.get()->opts.subject, "2.5.4.3", NULL));
+
+    if (temp_id_s == nullptr)
+    {
+        spdlog::error(" Unable to extract self certificate ID. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    if (this->m_id_s)
+    {
+        delete[] this->m_id_s;
+        this->m_id_s = nullptr;
+    }
+
+    this->m_id_s = new char[std::strlen(temp_id_s) + 1];
+    std::strcpy(this->m_id_s, temp_id_s);
+
+    spdlog::info(" {} Certificate self subject ID:", this->m_subject_name);
+    spdlog::info("     {}", this->m_id_s);
 
     return true;
 }
@@ -535,13 +599,30 @@ bool Subject::getIdentifierE()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to extract self certificate ID. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error(" Unable to extract extern certificate ID. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
-    std::memcpy(this->m_id_e, ak_tlv_get_string_from_global_name(this->m_cert_e.get()->opts.subject, "2.5.4.3", NULL), this->m_cert_e.get()->opts.subject->len);
+    if (this->m_cert_e.get()->opts.subject == nullptr)
+    {
+        spdlog::error(" Provided certificate has no subject option. Subject {}.", this->m_subject_name);
+        return false;
+    }
 
-    spdlog::info(" Certificate self subject name {}. Subject {}.", this->m_id_e, this->m_subject_name);
+    const char* temp_id_e = reinterpret_cast<char*>(ak_tlv_get_string_from_global_name(this->m_cert_e.get()->opts.subject, "2.5.4.3", NULL));
+
+    if (temp_id_e == nullptr)
+    {
+        spdlog::error("Unable to extract extern certificate ID. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    delete[] this->m_id_e;
+    this->m_id_e = new char[std::strlen(temp_id_e) + 1];
+    std::strcpy(this->m_id_e, temp_id_e);
+
+    spdlog::info(" {} Certificate extern subject ID:", this->m_subject_name);
+    spdlog::info("     {}", this->m_id_e);
 
     return true;
 }
@@ -561,8 +642,18 @@ bool Subject::generateHValue()
 
     ss << this->m_id_s << E_s_string << this->m_id_e << E_e_string;
 
-    std::memcpy(this->m_H_s, ss.str().c_str(), ss.str().size());
-    spdlog::info(" HMAC H value generated {}. Subject {}.", ss.str(), this->m_subject_name);
+    std::string temp = ss.str();
+    this->m_H_s = new char[temp.size() + 1];
+    std::strcpy(this->m_H_s, temp.c_str());
+
+    if (this->m_id_e == nullptr)
+    {
+        spdlog::error(" Unable to create H value. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} H value generated:", this->m_subject_name);
+    spdlog::info("     {}", ss.str());
 
     return true;
 }
@@ -587,27 +678,42 @@ bool Subject::generateHMAC()
     const std::string hash = UTILS::AkryptManager::getInstance().getHMACSeed();
 
     ak_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)password.c_str(), password.size(), (void*)hash.c_str(), hash.size());
+
     std::memset(buffer, 0, sizeof(buffer));
 
-    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H_s, sizeof(this->m_H_s), buffer, sizeof(buffer));
+    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H_s, std::strlen(this->m_H_s), buffer, sizeof(buffer));
 
     std::string hmac_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size((ak_hmac)streebog_ptr), ak_false);
 
-    spdlog::info(" HMAC generated {}. Subject {}.", hmac_result, this->m_subject_name);
+    spdlog::info(" {} HMAC generated:", this->m_subject_name);
+    spdlog::info("     {}", hmac_result);
 
-    std::string X_s_val(hmac_result, 0, 64); 
-    std::string Y_s_val(hmac_result, 64, 64); 
+    std::string X_s_val = hmac_result.substr(0, 64);
+    std::string Y_s_val = hmac_result.substr(64, 64);
 
-    std::memcpy(this->m_X_s, X_s_val.c_str(), X_s_val.size());
-    std::memcpy(this->m_Y_s, Y_s_val.c_str(), Y_s_val.size());
+    delete[] this->m_X_s;
+    this->m_X_s = new char[X_s_val.size() + 1];
+    std::strcpy(this->m_X_s, X_s_val.c_str());
+
+    delete[] this->m_Y_s;
+    this->m_Y_s = new char[Y_s_val.size() + 1];
+    std::strcpy(this->m_Y_s, Y_s_val.c_str());
 
     const std::string vba_value = UTILS::AkryptManager::getInstance().getVBAvalue();
     const std::string vab_value = UTILS::AkryptManager::getInstance().getVABvalue();
 
-    std::memcpy(this->m_v_se, vab_value.c_str(), vab_value.size());
-    std::memcpy(this->m_v_es, vba_value.c_str(), vba_value.size());
+    delete[] this->m_v_se;
+    this->m_v_se = new char[vab_value.size() + 1];
+    std::strcpy(this->m_v_se, vab_value.c_str());
 
-    spdlog::info(" X_s||Y_s||v_e||v_es = {}||{}||{}||{}.", this->m_X_s, this->m_Y_s, this->m_v_se, this->m_v_es);
+    delete[] this->m_v_es;
+    this->m_v_es = new char[vba_value.size() + 1];
+    std::strcpy(this->m_v_es, vba_value.c_str());
+
+    spdlog::info("     X_s  = {}", this->m_X_s);
+    spdlog::info("     Y_s  = {}", this->m_Y_s);
+    spdlog::info("     v_se = {}", this->m_v_se);
+    spdlog::info("     v_es = {}", this->m_v_es);
 
     return true;
 }
