@@ -87,6 +87,7 @@ public:
     const ak_uint64* getXi_es_key() const;
     const ak_uint64* getR_s_text() const;
     const ak_uint64* getR_e_text() const;
+    const ak_uint64* getK_s_key() const;
     const wpoint getE_s_point() const;
     const wpoint getE_e_point() const;
     const wpoint getQ_s_point() const;
@@ -137,6 +138,8 @@ private:
     ak_uint64 m_Xi_e_key[32] = {0}; ///< ξ_b
     ak_uint64 m_Xi_se_key[32] = {0}; ///< ξ_ab
     ak_uint64 m_Xi_es_key[32] = {0}; ///< ξ_ba
+
+    ak_uint64 m_K_se_key[32] = {0}; ///< K_ab
 
     ak_uint64* m_R_s_text = {nullptr}; ///< R_a
     ak_uint64* m_R_e_text = {nullptr}; ///< R_b
