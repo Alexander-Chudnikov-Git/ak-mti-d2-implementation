@@ -34,13 +34,7 @@ bool IdentifySubjectA::execute([[maybe_unused]] Subject& subject_a, [[maybe_unus
 {
     spdlog::info("                                                           ");
 
-    ak_uint8 serialnum[32] = {0};
     auto serialnum_len = subject_a.getN_s_num_len();
-
-    if (serialnum_len > sizeof(serialnum))
-    {
-        return false;
-    }
 
     subject_b.setReq_e(subject_a.getReq_s());
     subject_b.setN_e_num(subject_a.getN_s_num(), serialnum_len);
@@ -86,17 +80,10 @@ bool RequestCertificateA::enter([[maybe_unused]] Subject& subject_a, [[maybe_unu
         return false;
     }
 
-    ak_uint8 serialnum[32] = {0};
     auto serialnum_len = subject_b.getN_ca_num_len();
-
-    if (serialnum_len > sizeof(serialnum))
-    {
-        return false;
-    }
 
     subject_a.setN_ca_num(subject_b.getN_ca_num(), serialnum_len);
     subject_a.set_e_e_id(subject_b.get_e_s_id());
-
 
     return true;
 }
@@ -148,11 +135,6 @@ bool SubjectCertificateA::enter([[maybe_unused]] Subject& subject_a, [[maybe_unu
     spdlog::info("-----------------------------------------------------------");
 
     if (!subject_b.verifyExternCa())
-    {
-        return false;
-    }
-
-    if (!subject_b.extractExternCertId())
     {
         return false;
     }
@@ -232,6 +214,11 @@ bool SubjectCertificateA::exit([[maybe_unused]] Subject& subject_a, [[maybe_unus
         return false;
     }
 
+    if (!subject_b.encryptXivalue())
+    {
+        return false;
+    }
+
     spdlog::info("-----------------------------------------------------------");
 
     return true;
@@ -243,93 +230,46 @@ bool IdentifySubjectB::enter([[maybe_unused]] Subject& subject_a, [[maybe_unused
 {
     spdlog::info("-----------------------------------------------------------");
 
-    if (!subject_b.extractSerialNumber())
-    {
-        return false;
-    }
-
-    if (!subject_b.generateRandomXiScalar())
-    {
-        return false;
-    }
-
-    if (!subject_b.calculateEPoint())
-    {
-        return false;
-    }
+    this->m_skip = !subject_b.getReq_e();
 
     return true;
 }
 
 bool IdentifySubjectB::execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b)
 {
-    spdlog::info("                                                           ");
+    auto r_b_text = subject_b.getR_s_text();
+    subject_a.setR_e_text(r_b_text, sizeof(r_b_text));
 
-    ak_uint8 serialnum[32] = {0};
-    auto serialnum_len = subject_a.getN_s_num_len();
-
-    if (serialnum_len > sizeof(serialnum))
-    {
-        return false;
-    }
-
-    subject_a.setReq_e(subject_a.getReq_s());
-    subject_a.setN_e_num(subject_a.getN_s_num(), serialnum_len);
-    subject_a.setE_e_point(subject_a.getE_s_point());
-
-    spdlog::info("                                                           ");
+    auto e_b_point = subject_b.getE_s_point();
+    subject_a.setE_e_point(e_b_point);
 
     return true;
 }
 
 bool IdentifySubjectB::exit([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b)
 {
-    if (!subject_a.checkExternEPoint())
+    if (this->m_skip)
     {
-        return false;
-    }
+        if (!subject_b.extractSerialNumber())
+        {
+            return false;
+        }
 
-    if (!subject_a.findExternCert())
+        auto serialnum_len = subject_b.getN_s_num_len();
+        subject_a.setN_e_num(subject_b.getN_s_num(), serialnum_len);
+
+        if (!subject_a.findExternCert())
+        {
+            return false;
+        }
+    }
+    else
     {
-        return false;
+        auto b_cert = subject_b.getCert_s();
+        subject_a.setCert_e(b_cert);
     }
 
     spdlog::info("-----------------------------------------------------------");
-
-    return true;
-}
-
-// ================ IdentifySubjectWithCertificateB ================
-
-bool IdentifySubjectWithCertificateB::enter([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b)
-{
-    spdlog::info("-----------------------------------------------------------");
-
-    // паб ключ из сертификата а
-    if(!subject_b.extractExternPublicKey()) {
-        spdlog::error(" Subject B: Failed to extract A's public key");
-        return false;
-    }
-
-    // TODO: Implement
-
-    return true;
-}
-
-bool IdentifySubjectWithCertificateB::execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]]  Subject& subject_b)
-{
-    spdlog::info("-----------------------------------------------------------");
-
-    // TODO: Implement
-
-    return true;
-}
-
-bool IdentifySubjectWithCertificateB::exit([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b)
-{
-    spdlog::info("-----------------------------------------------------------");
-
-    // TODO: Implement
 
     return true;
 }
@@ -408,8 +348,7 @@ void Exchanger::init(Subject subject_a, Subject subject_b)
     this->addStep("RequestCertificateA", std::make_unique<RequestCertificateA>());
     this->addStep("SubjectCertificateA", std::make_unique<SubjectCertificateA>());
 
-    //this->addStep("IdentifySubjectB", std::make_unique<IdentifySubjectB>());
-    //this->addStep("IdentifySubjectWithCertificateB", std::make_unique<IdentifySubjectWithCertificateB>());
+    this->addStep("IdentifySubjectB", std::make_unique<IdentifySubjectB>());
     //this->addStep("SubjectAuthenticateA", std::make_unique<SubjectAuthenticateA>());
     //this->addStep("SubjectAuthenticateB", std::make_unique<SubjectAuthenticateB>());
 

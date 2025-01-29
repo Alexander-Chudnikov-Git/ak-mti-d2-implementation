@@ -41,7 +41,6 @@ public:
     bool calculateQPoint();
     bool extractSerialNumber();
     bool extractCASerialNumber();
-    bool extractExternCertId();
     bool extractExternPublicKey();
     bool checkExternEPoint();
     bool findExternCert();
@@ -54,8 +53,11 @@ public:
     bool getIdentifierE();
     bool generateHValue();
     bool generateHMAC();
+    bool encryptXivalue();
 
 public:
+    void setR_s_text(const ak_uint64* r_s_text, ak_uint32 r_s_text_len);
+    void setR_e_text(const ak_uint64* r_e_text, ak_uint32 r_e_text_len);
     void setE_s_point(const wpoint& E_s_point);
     void setE_e_point(const wpoint& E_e_point);
     void setQ_s_point(const wpoint& Q_s_point);
@@ -78,6 +80,8 @@ public:
     const ak_uint64* getXi_e_key() const;
     const ak_uint64* getXi_se_key() const;
     const ak_uint64* getXi_es_key() const;
+    const ak_uint64* getR_s_text() const;
+    const ak_uint64* getR_e_text() const;
     const wpoint getE_s_point() const;
     const wpoint getE_e_point() const;
     const wpoint getQ_s_point() const;
@@ -120,10 +124,13 @@ private:
     char* m_v_es = {nullptr};
 
     /** s stands for 'self' and e for 'extern', so is subject is A, then 's -> a' 'e -> b' **/
-    ak_uint64 m_Xi_s_key[4] = {0}; ///< ξ_a
-    ak_uint64 m_Xi_e_key[4] = {0}; ///< ξ_b
-    ak_uint64 m_Xi_se_key[4] = {0}; ///< ξ_ab
-    ak_uint64 m_Xi_es_key[4] = {0}; ///< ξ_ba
+    ak_uint64 m_Xi_s_key[32] = {0}; ///< ξ_a
+    ak_uint64 m_Xi_e_key[32] = {0}; ///< ξ_b
+    ak_uint64 m_Xi_se_key[32] = {0}; ///< ξ_ab
+    ak_uint64 m_Xi_es_key[32] = {0}; ///< ξ_ba
+
+    ak_uint64* m_R_s_text = {nullptr}; ///< R_a
+    ak_uint64* m_R_e_text = {nullptr}; ///< R_b
 
     wpoint m_E_s_point = {}; ///< E_a
     wpoint m_E_e_point = {}; ///< E_b

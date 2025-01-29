@@ -75,6 +75,18 @@ Subject::~Subject()
     {
         delete[] this->m_v_es;
         this->m_v_es = nullptr;
+    }
+
+    if (this->m_R_s_text != nullptr)
+    {
+        delete[] this->m_R_s_text;
+        this->m_R_s_text = nullptr;
+    }
+
+    if (this->m_R_e_text != nullptr)
+    {
+        delete[] this->m_R_e_text;
+        this->m_R_e_text = nullptr;
     }*/
 
     UTILS::AkryptManager::getInstance().stopUsing();
@@ -187,7 +199,7 @@ bool Subject::generateRandomXiScalar()
     }
 
     // Add check for for Fq
-    if (ak_random_ptr(&generator, this->m_Xi_s_key, sizeof(this->m_Xi_s_key)) != ak_error_ok)
+    if (ak_random_ptr(&generator, this->m_Xi_s_key, sizeof(this->m_Xi_s_key) / sizeof(ak_uint64)) != ak_error_ok)
     {
         spdlog::error(" Failed to generate random values.");
         ak_random_destroy(&generator);
@@ -219,7 +231,7 @@ bool Subject::generateRandomXiSEScalar()
     }
 
     // Add check for for Fq
-    if (ak_random_ptr(&generator, this->m_Xi_se_key, sizeof(this->m_Xi_se_key)) != ak_error_ok)
+    if (ak_random_ptr(&generator, this->m_Xi_se_key, sizeof(this->m_Xi_se_key) / sizeof(ak_uint64)) != ak_error_ok)
     {
         spdlog::error(" Failed to generate random values.");
         ak_random_destroy(&generator);
@@ -286,7 +298,7 @@ bool Subject::calculateQPoint()
     wpoint temp_point_1 = {};
     wpoint temp_point_2 = {};
 
-    ak_wpoint_pow(&temp_point_1, &this->m_С_s_point, this->m_Xi_e_key, sizeof(this->m_Xi_e_key), this->m_cert_s.get()->vkey.wc);
+    ak_wpoint_pow(&temp_point_1, &this->m_С_s_point, this->m_Xi_e_key, sizeof(this->m_Xi_e_key) / sizeof(ak_uint64), this->m_cert_s.get()->vkey.wc);
     ak_wpoint_pow(&temp_point_2, &this->m_С_s_point, reinterpret_cast<ak_uint64 *>(this->m_d_s_key.get()->key), (this->m_d_s_key.get()->key_size / 4), this->m_cert_s.get()->vkey.wc); ///< Yeah, looks painfull
     ak_wpoint_set_wpoint(&this->m_Q_se_point, &temp_point_1, this->m_cert_s.get()->vkey.wc);
     ak_wpoint_add(&this->m_Q_se_point, &temp_point_2, this->m_cert_s.get()->vkey.wc);
@@ -329,19 +341,6 @@ bool Subject::extractCASerialNumber()
 
     spdlog::info(" {} CA serial number:", this->m_subject_name);
     spdlog::info("     {}", ak_ptr_to_hexstr(this->m_ca_serialnum, this->m_ca_serialnum_length, ak_false));
-
-    return true;
-}
-
-bool Subject::extractExternCertId()
-{
-    if (!this->m_initialized)
-    {
-        spdlog::error(" Unable to extract subject ID. Subject {} is not initialized.", this->m_subject_name);
-        return false;
-    }
-
-    // I have no idea what's subject id
 
     return true;
 }
@@ -662,7 +661,7 @@ bool Subject::generateHMAC()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to generate HMAC Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error(" Unable to generate HMAC. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -679,9 +678,9 @@ bool Subject::generateHMAC()
 
     ak_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)password.c_str(), password.size(), (void*)hash.c_str(), hash.size());
 
-    std::memset(buffer, 0, sizeof(buffer));
+    std::memset(buffer, 0, sizeof(buffer) / sizeof(ak_uint8));
 
-    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H_s, std::strlen(this->m_H_s), buffer, sizeof(buffer));
+    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H_s, std::strlen(this->m_H_s), buffer, sizeof(buffer) / sizeof(ak_uint8));
 
     std::string hmac_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size((ak_hmac)streebog_ptr), ak_false);
 
@@ -718,7 +717,70 @@ bool Subject::generateHMAC()
     return true;
 }
 
+bool Subject::encryptXivalue()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to encrypt Xi_se. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    struct bckey kuznechik_key;
+    ak_uint8 iv[16] = {0};
+
+    auto vb_value = UTILS::AkryptManager::getInstance().getVBAvalue();
+
+    std::memcpy(iv, vb_value.data(), std::min(vb_value.size(), sizeof(iv) / sizeof(ak_uint8)));
+
+    if (ak_bckey_create_kuznechik(&kuznechik_key) != ak_error_ok)
+    {
+        spdlog::error(" Unable to create kuznechik bckey. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    if (ak_bckey_set_key(&kuznechik_key, this->m_X_s, 32) != ak_error_ok)
+    {
+        spdlog::error(" Unable to set kuznechik key. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    delete[] this->m_R_s_text;
+    this->m_R_s_text = new ak_uint64[sizeof(this->m_Xi_se_key) / sizeof(ak_uint64)];
+
+    if (ak_bckey_ctr(&kuznechik_key, this->m_Xi_se_key, this->m_R_s_text, sizeof(this->m_Xi_se_key) / sizeof(ak_uint64), iv, sizeof(iv) / sizeof(ak_uint8)) != ak_error_ok)
+    {
+        spdlog::error(" Unable to encrypt Xi_se. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} Xi_se enctypted:", this->m_subject_name);
+    spdlog::info("     Xi_se = {}", ak_mpzn_to_hexstr(this->m_Xi_se_key, ak_mpzn256_size));
+    spdlog::info("     R_s   = {}", ak_mpzn_to_hexstr(this->m_R_s_text, ak_mpzn256_size));
+
+    return true;
+}
+
 // ======================== Class Setters ========================
+
+void Subject::setR_s_text(const ak_uint64* r_s_text, ak_uint32 r_s_text_len)
+{
+    delete[] this->m_R_s_text;
+    this->m_R_s_text = new ak_uint64[r_s_text_len];
+    std::copy(r_s_text, r_s_text + r_s_text_len, this->m_R_s_text);
+
+    spdlog::info(" {} recieved R_s text:", this->m_subject_name);
+    spdlog::info("     R_s   = {}", ak_mpzn_to_hexstr(this->m_R_s_text, ak_mpzn256_size));
+}
+
+void Subject::setR_e_text(const ak_uint64* r_e_text, ak_uint32 r_e_text_len)
+{
+    delete[] this->m_R_e_text;
+    this->m_R_e_text = new ak_uint64[r_e_text_len];
+    std::copy(r_e_text, r_e_text + r_e_text_len, this->m_R_e_text);
+
+    spdlog::info(" {} recieved R_e text:", this->m_subject_name);
+    spdlog::info("     R_e   = {}", ak_mpzn_to_hexstr(this->m_R_e_text, ak_mpzn256_size));
+}
 
 void Subject::setE_s_point(const wpoint& E_s_point)
 {
@@ -773,7 +835,7 @@ void Subject::setN_ca_num(const ak_uint8* ca_serialnum, ak_uint32 ca_serialnum_l
     }
     else
     {
-        std::memset(this->m_ca_serialnum, 0, sizeof(this->m_ca_serialnum));
+        std::memset(this->m_ca_serialnum, 0, sizeof(this->m_ca_serialnum) / sizeof(ak_uint8));
     }
 }
 
@@ -788,7 +850,7 @@ void Subject::setN_s_num(const ak_uint8* s_serialnum, ak_uint32 s_serialnum_len)
     }
     else
     {
-        std::memset(this->m_s_serialnum, 0, sizeof(this->m_s_serialnum));
+        std::memset(this->m_s_serialnum, 0, sizeof(this->m_s_serialnum) / sizeof(ak_uint8));
     }
 }
 
@@ -803,7 +865,7 @@ void Subject::setN_e_num(const ak_uint8* e_serialnum, ak_uint32 e_serialnum_len)
     }
     else
     {
-        std::memset(this->m_e_serialnum, 0, sizeof(this->m_e_serialnum));
+        std::memset(this->m_e_serialnum, 0, sizeof(this->m_e_serialnum) / sizeof(ak_uint8));
     }
 }
 
@@ -833,11 +895,15 @@ void Subject::set_e_e_id(wcurve_id_t e_wc_id)
 
 void Subject::setCert_s(UTILS::AkryptCertificate cert_s)
 {
+    spdlog::info(" {} recieved self sertificate", this->m_subject_name);
+
     this->m_cert_s = cert_s;
 }
 
 void Subject::setCert_e(UTILS::AkryptCertificate cert_e)
 {
+    spdlog::info(" {} recieved etern sertificate", this->m_subject_name);
+
     this->m_cert_e = cert_e;
 }
 
@@ -861,6 +927,16 @@ const ak_uint64* Subject::getXi_se_key() const
 const ak_uint64* Subject::getXi_es_key() const
 {
     return this->m_Xi_es_key;
+}
+
+const ak_uint64* Subject::getR_s_text() const
+{
+    return this->m_R_s_text;
+}
+
+const ak_uint64* Subject::getR_e_text() const
+{
+    return this->m_R_e_text;
 }
 
 const wpoint Subject::getE_s_point() const
