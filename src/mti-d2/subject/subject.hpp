@@ -51,9 +51,14 @@ public:
     bool verifyPDiff();
     bool getIdentifierS();
     bool getIdentifierE();
-    bool generateHValue();
+    bool generateH1ValueS();
+    bool generateH1ValueE();
+    bool generateH2ValueS();
+    bool generateH2ValueE();
     bool generateHMAC();
+    bool generateKkey();
     bool encryptXivalue();
+    bool decryptXivalue();
 
 public:
     void setR_s_text(const ak_uint64* r_s_text, ak_uint32 r_s_text_len);
@@ -118,7 +123,8 @@ private:
     char* m_id_s = {nullptr};
     char* m_id_e = {nullptr};
 
-    char* m_H_s = {nullptr};
+    char* m_H1_s = {nullptr};
+    char* m_H2_s = {nullptr};
 
     char* m_X_s = {nullptr};
     char* m_Y_s = {nullptr};
@@ -134,6 +140,8 @@ private:
 
     ak_uint64* m_R_s_text = {nullptr}; ///< R_a
     ak_uint64* m_R_e_text = {nullptr}; ///< R_b
+
+    ak_uint64* m_P_s_text = {nullptr}; ///< P_a
 
     wpoint m_E_s_point = {}; ///< E_a
     wpoint m_E_e_point = {}; ///< E_b

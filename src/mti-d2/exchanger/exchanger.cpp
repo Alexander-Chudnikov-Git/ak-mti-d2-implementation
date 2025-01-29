@@ -203,7 +203,7 @@ bool SubjectCertificateA::exit([[maybe_unused]] Subject& subject_a, [[maybe_unus
         return false;
     }
 
-    if (!subject_b.generateHValue())
+    if (!subject_b.generateH1ValueE())
     {
         return false;
     }
@@ -300,11 +300,15 @@ bool SubjectAuthenticateA::enter([[maybe_unused]] Subject& subject_a, [[maybe_un
 
     if (std::strcmp(old_id, new_id) != 0)
     {
+        delete[] old_id;
+        delete[] new_id;
         spdlog::error(" Certificate B id differ fron initial one.");
         return false;
     }
     else
     {
+        delete[] old_id;
+        delete[] new_id;
         spdlog::info(" Certificate B id validated.");
     }
 
@@ -372,7 +376,7 @@ bool SubjectAuthenticateB::enter([[maybe_unused]] Subject& subject_a, [[maybe_un
         return false;
     }
 
-    if (!subject_a.generateHValue())
+    if (!subject_a.generateH1ValueS())
     {
         return false;
     }
@@ -387,8 +391,10 @@ bool SubjectAuthenticateB::enter([[maybe_unused]] Subject& subject_a, [[maybe_un
         return false;
     }
 
-    // Add decryption
-
+    if (!subject_a.decryptXivalue())
+    {
+        return false;
+    }
     // Add mac
 
     return true;
@@ -398,9 +404,16 @@ bool SubjectAuthenticateB::execute([[maybe_unused]] Subject& subject_a, [[maybe_
 {
     spdlog::info("                                                           ");
 
-    // transfer R_a + T_a
+    // transfer T_a
 
-    // dec
+    auto r_a_text = subject_a.getR_s_text();
+    subject_b.setR_e_text(r_a_text, sizeof(r_a_text));
+
+    if (!subject_b.decryptXivalue())
+    {
+        return false;
+    }
+
     // check mac
     // mac
 
@@ -416,7 +429,25 @@ bool SubjectAuthenticateB::exit([[maybe_unused]] Subject& subject_a, [[maybe_unu
 
     // check mac
 
-    // get K_ab and K_ba
+    if (!subject_a.generateH2ValueS())
+    {
+        return false;
+    }
+
+    if (!subject_b.generateH2ValueE())
+    {
+        return false;
+    }
+
+    if (!subject_a.generateKkey())
+    {
+        return false;
+    }
+
+    if (!subject_b.generateKkey())
+    {
+        return false;
+    }
 
     // compare them
 
