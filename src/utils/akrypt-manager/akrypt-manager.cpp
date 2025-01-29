@@ -89,7 +89,7 @@ std::string AkryptManager::getUABvalue()
 
 void AkryptManager::setVBAvalue(std::string& value)
 {
-    if (value.size() != 32)
+    if (value.size() != 16)
     {
         spdlog::error(" Invalid uv parameter size provided.");
         return;
@@ -100,7 +100,7 @@ void AkryptManager::setVBAvalue(std::string& value)
 
 void AkryptManager::setVABvalue(std::string& value)
 {
-    if (value.size() != 32)
+    if (value.size() != 16)
     {
         spdlog::error(" Invalid uv parameter size provided.");
         return;
@@ -111,23 +111,23 @@ void AkryptManager::setVABvalue(std::string& value)
 
 void AkryptManager::setUBAvalue(std::string& value)
 {
-    if (value.size() != 32)
+    if (value.size() != 16)
     {
         spdlog::error(" Invalid uv parameter size provided.");
         return;
     }
-    
+
     this->m_uba_value = value;
 }
 
 void AkryptManager::setUABvalue(std::string& value)
 {
-    if (value.size() != 32)
+    if (value.size() != 16)
     {
         spdlog::error(" Invalid uv parameter size provided.");
         return;
     }
-    
+
     this->m_uab_value = value;
 }
 
