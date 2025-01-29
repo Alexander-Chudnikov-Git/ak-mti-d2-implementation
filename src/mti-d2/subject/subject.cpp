@@ -302,8 +302,8 @@ bool Subject::calculateQPoint()
     wpoint temp_point_1 = {};
     wpoint temp_point_2 = {};
 
-    ak_wpoint_pow(&temp_point_1, &this->m_С_s_point, this->m_Xi_e_key, sizeof(this->m_Xi_e_key) / sizeof(ak_uint64), this->m_cert_s.get()->vkey.wc);
-    ak_wpoint_pow(&temp_point_2, &this->m_С_s_point, reinterpret_cast<ak_uint64 *>(this->m_d_s_key.get()->key), (this->m_d_s_key.get()->key_size / 4), this->m_cert_s.get()->vkey.wc); ///< Yeah, looks painfull
+    ak_wpoint_pow(&temp_point_1, &this->m_С_e_point, this->m_Xi_s_key, sizeof(this->m_Xi_s_key) / sizeof(ak_uint64), this->m_cert_s.get()->vkey.wc);
+    ak_wpoint_pow(&temp_point_2, &this->m_С_e_point, reinterpret_cast<ak_uint64 *>(this->m_d_s_key.get()->key), (this->m_d_s_key.get()->key_size / 4), this->m_cert_s.get()->vkey.wc); ///< Yeah, looks painfull
     ak_wpoint_set_wpoint(&this->m_Q_se_point, &temp_point_1, this->m_cert_s.get()->vkey.wc);
     ak_wpoint_add(&this->m_Q_se_point, &temp_point_2, this->m_cert_s.get()->vkey.wc);
 
@@ -768,7 +768,7 @@ bool Subject::generateHMAC()
     streebog_oid = ak_oid_find_by_name("hmac-streebog512");
     streebog_ptr = ak_oid_new_object(streebog_oid);
 
-    ak_uint8 buffer[128];
+    ak_uint8 buffer[64];
     std::memset(buffer, 0, sizeof(buffer) / sizeof(ak_uint8));
 
     const std::string password = UTILS::AkryptHelper::makePointsToString(this->m_Q_se_point, ak_mpzn256_size);
@@ -810,6 +810,8 @@ bool Subject::generateHMAC()
     spdlog::info("     Y_s  = {}", this->m_Y_s);
     spdlog::info("     v_se = {}", this->m_v_se);
     spdlog::info("     v_es = {}", this->m_v_es);
+
+    ak_hmac_destroy((ak_hmac)streebog_ptr);
 
     return true;
 }
@@ -922,7 +924,7 @@ bool Subject::generateKkey()
     streebog_oid = ak_oid_find_by_name("hmac-streebog512");
     streebog_ptr = ak_oid_new_object(streebog_oid);
 
-    ak_uint8 buffer[128];
+    ak_uint8 buffer[64];
     std::memset(buffer, 0, sizeof(buffer) / sizeof(ak_uint8));
 
     const std::string password = UTILS::AkryptHelper::makePointsToString(this->m_Q_se_point, ak_mpzn256_size);
@@ -936,6 +938,18 @@ bool Subject::generateKkey()
 
     spdlog::info(" {} K key generated:", this->m_subject_name);
     spdlog::info("     {}", k_key_result);
+
+    if (sizeof(buffer) % sizeof(ak_uint64) != 0)
+    {
+        spdlog::error(" K key buffer size is not a multiple of ak_uint64 size for Subject {}.", this->m_subject_name);
+        ak_hmac_destroy((ak_hmac)streebog_ptr);
+        return false;
+
+    }
+
+    std::memcpy(this->m_K_se_key, buffer, sizeof(buffer) / sizeof(ak_uint8));
+
+    ak_hmac_destroy((ak_hmac)streebog_ptr);
 
     return true;
 }
@@ -1117,6 +1131,11 @@ const ak_uint64* Subject::getR_s_text() const
 const ak_uint64* Subject::getR_e_text() const
 {
     return this->m_R_e_text;
+}
+
+const ak_uint64* Subject::getK_s_key() const
+{
+    return this->m_K_se_key;
 }
 
 const wpoint Subject::getE_s_point() const

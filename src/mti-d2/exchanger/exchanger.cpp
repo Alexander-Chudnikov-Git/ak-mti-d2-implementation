@@ -449,7 +449,19 @@ bool SubjectAuthenticateB::exit([[maybe_unused]] Subject& subject_a, [[maybe_unu
         return false;
     }
 
-    // compare them
+    auto exchange_a = subject_a.getK_s_key();
+    auto exchange_b = subject_b.getK_s_key();
+
+    for (int i = 0; i < 32; i++)
+    {
+        if (exchange_a[i] != exchange_b[i])
+        {
+            spdlog::error(" Exchanged keys are different, exchange failed.");
+            return false;
+        }
+    }
+
+    spdlog::info(" Exchanged keys match, exchange success.");
 
     spdlog::info("-----------------------------------------------------------");
     return true;
