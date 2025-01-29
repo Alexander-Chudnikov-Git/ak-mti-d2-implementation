@@ -99,6 +99,9 @@ public:
     wcurve_id_t get_e_s_id() const;
     wcurve_id_t get_e_e_id() const;
 
+    char* getIdS() const;
+    char* getIdE() const;
+
     UTILS::AkryptCertificate getCert_s();
     UTILS::AkryptCertificate getCert_e();
 

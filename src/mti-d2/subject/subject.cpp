@@ -123,13 +123,17 @@ void Subject::initSubject(UTILS::AkryptCertificate cert_ca,
         this->m_req_s = true;
     }
 
-    /*this->m_id_e = id_e;*/
 
     spdlog::info(" Subject '{}' initialized.", this->m_subject_name);
 
     this->initLibAkrypt();
 
     this->m_initialized = true;
+
+    // if id_e is {}
+    this->getIdentifierE();
+    // else
+    /*this->m_id_e = id_e;*/
 
     // DEBUG
     /*
@@ -1007,6 +1011,32 @@ wcurve_id_t Subject::get_e_s_id() const
 wcurve_id_t Subject::get_e_e_id() const
 {
     return this->m_e_wc_id;
+}
+
+char* Subject::getIdS() const
+{
+    if (!m_id_s)
+    {
+        return nullptr;
+    }
+
+    size_t len = std::strlen(m_id_s) + 1;
+    char* copy = new char[len];
+    std::strcpy(copy, m_id_s);
+    return copy;
+}
+
+char* Subject::getIdE() const
+{
+    if (!m_id_e)
+    {
+        return nullptr;
+    }
+
+    size_t len = std::strlen(m_id_e) + 1;
+    char* copy = new char[len];
+    std::strcpy(copy, m_id_e);
+    return copy;
 }
 
 UTILS::AkryptCertificate Subject::getCert_s()
