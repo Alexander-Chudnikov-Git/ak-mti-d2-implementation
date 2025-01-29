@@ -22,6 +22,8 @@ public:
     static std::string_view getAkErrorDescription(int error);
 
     static void logWPoint(struct wpoint& wpoint, const size_t size = ak_mpzn512_size);
+
+    static std::string makePointsToString(struct wpoint& wpoint, const size_t size);
 };
 }
 

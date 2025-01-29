@@ -93,6 +93,12 @@ int main(const int argc, const char** argv)
     auto a_subject = MTI_D2::Subject("Subject A", ca_cert, a_cert, a_key, b_cert);
     auto b_subject = MTI_D2::Subject("Subject B", ca_cert, b_cert, b_key, a_cert);
 
+    UTILS::AkryptManager::getInstance().setHMACSeed("random_hmac_seed");
+
+    // Must be 32 symbols; [string here to bypass & error]
+    std::string UValue32 = "random_uv_value_1234567890987654";
+    UTILS::AkryptManager::getInstance().setUVvalue(UValue32);
+
     auto exchanger = MTI_D2::Exchanger();
 
     exchanger.init(a_subject, b_subject);

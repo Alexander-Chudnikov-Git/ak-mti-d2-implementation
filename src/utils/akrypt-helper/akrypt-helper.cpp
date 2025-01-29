@@ -149,6 +149,15 @@ void AkryptHelper::logWPoint(struct wpoint& wpoint, const size_t size)
     spdlog::info("     z-{}", ak_mpzn_to_hexstr(wpoint.z, size));
 }
 
+std::string AkryptHelper::makePointsToString(struct wpoint& wpoint, const size_t size)
+{
+    std::stringstream points_str;
+
+    points_str << ak_mpzn_to_hexstr(wpoint.x, size) << ak_mpzn_to_hexstr(wpoint.y, size) << ak_mpzn_to_hexstr(wpoint.z, size);
+
+    return  points_str.str();
+}
+
 std::string_view AkryptHelper::getAkErrorDescription(int error)
 {
     switch (error)
