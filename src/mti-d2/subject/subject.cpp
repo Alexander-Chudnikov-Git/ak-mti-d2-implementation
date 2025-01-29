@@ -47,10 +47,10 @@ Subject::~Subject()
         this->m_id_e = nullptr;
     }
 
-    if (this->m_H_s != nullptr)
+    if (this->m_H1_s != nullptr)
     {
-        delete[] this->m_H_s;
-        this->m_H_s = nullptr;
+        delete[] this->m_H1_s;
+        this->m_H1_s = nullptr;
     }
 
     if (this->m_X_s != nullptr)
@@ -630,7 +630,7 @@ bool Subject::getIdentifierE()
     return true;
 }
 
-bool Subject::generateHValue()
+bool Subject::generateH1ValueS()
 {
     if (!this->m_initialized)
     {
@@ -646,8 +646,8 @@ bool Subject::generateHValue()
     ss << this->m_id_s << E_s_string << this->m_id_e << E_e_string;
 
     std::string temp = ss.str();
-    this->m_H_s = new char[temp.size() + 1];
-    std::strcpy(this->m_H_s, temp.c_str());
+    this->m_H1_s = new char[temp.size() + 1];
+    std::strcpy(this->m_H1_s, temp.c_str());
 
     if (this->m_id_e == nullptr)
     {
@@ -656,6 +656,99 @@ bool Subject::generateHValue()
     }
 
     spdlog::info(" {} H value generated:", this->m_subject_name);
+    spdlog::info("     {}", ss.str());
+
+    return true;
+}
+
+bool Subject::generateH1ValueE()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate H value. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    const std::string E_s_string = UTILS::AkryptHelper::makePointsToString(this->m_E_s_point, ak_mpzn256_size);
+    const std::string E_e_string = UTILS::AkryptHelper::makePointsToString(this->m_E_e_point, ak_mpzn256_size);
+
+    std::stringstream ss;
+
+    ss << this->m_id_e << E_e_string << this->m_id_s << E_s_string ;
+
+    std::string temp = ss.str();
+    this->m_H1_s = new char[temp.size() + 1];
+    std::strcpy(this->m_H1_s, temp.c_str());
+
+    if (this->m_id_e == nullptr)
+    {
+        spdlog::error(" Unable to create H value. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} H value generated:", this->m_subject_name);
+    spdlog::info("     {}", ss.str());
+
+    return true;
+}
+
+bool Subject::generateH2ValueS()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate H2 value. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    const std::string Xi_s_string  = ak_mpzn_to_hexstr(this->m_Xi_se_key, ak_mpzn256_size);
+    const std::string P_s_string   = ak_mpzn_to_hexstr(this->m_P_s_text, ak_mpzn256_size);
+
+    std::stringstream ss;
+
+    ss << this->m_H1_s << Xi_s_string << P_s_string;
+
+    std::string temp = ss.str();
+    this->m_H2_s = new char[temp.size() + 1];
+    std::strcpy(this->m_H2_s, temp.c_str());
+
+    if (this->m_id_e == nullptr)
+    {
+        spdlog::error(" Unable to create H2 value. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} H2 value generated:", this->m_subject_name);
+    spdlog::info("     {}", ss.str());
+
+    return true;
+}
+
+bool Subject::generateH2ValueE()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate H2 value. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    const std::string Xi_e_string  = ak_mpzn_to_hexstr(this->m_Xi_se_key, ak_mpzn256_size);
+    const std::string P_s_string   = ak_mpzn_to_hexstr(this->m_P_s_text, ak_mpzn256_size);
+
+    std::stringstream ss;
+
+    ss << this->m_H1_s << P_s_string << Xi_e_string;
+
+    std::string temp = ss.str();
+    this->m_H2_s = new char[temp.size() + 1];
+    std::strcpy(this->m_H2_s, temp.c_str());
+
+    if (this->m_id_e == nullptr)
+    {
+        spdlog::error(" Unable to create H2 value. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} H2 value generated:", this->m_subject_name);
     spdlog::info("     {}", ss.str());
 
     return true;
@@ -676,15 +769,15 @@ bool Subject::generateHMAC()
     streebog_ptr = ak_oid_new_object(streebog_oid);
 
     ak_uint8 buffer[128];
+    std::memset(buffer, 0, sizeof(buffer) / sizeof(ak_uint8));
 
     const std::string password = UTILS::AkryptHelper::makePointsToString(this->m_Q_se_point, ak_mpzn256_size);
     const std::string hash = UTILS::AkryptManager::getInstance().getHMACSeed();
 
     ak_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)password.c_str(), password.size(), (void*)hash.c_str(), hash.size());
+    //k_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)buffer, 128, (void*)hash.c_str(), hash.size()); // DEBUG
 
-    std::memset(buffer, 0, sizeof(buffer) / sizeof(ak_uint8));
-
-    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H_s, std::strlen(this->m_H_s), buffer, sizeof(buffer) / sizeof(ak_uint8));
+    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H1_s, std::strlen(this->m_H1_s), buffer, sizeof(buffer) / sizeof(ak_uint8));
 
     std::string hmac_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size((ak_hmac)streebog_ptr), ak_false);
 
@@ -760,6 +853,89 @@ bool Subject::encryptXivalue()
     spdlog::info(" {} Xi_se enctypted:", this->m_subject_name);
     spdlog::info("     Xi_se = {}", ak_mpzn_to_hexstr(this->m_Xi_se_key, ak_mpzn256_size));
     spdlog::info("     R_s   = {}", ak_mpzn_to_hexstr(this->m_R_s_text, ak_mpzn256_size));
+
+    return true;
+}
+
+bool Subject::decryptXivalue()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to decrypt Xi_se. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    struct bckey kuznechik_key;
+    ak_uint8 iv[16] = {0};
+
+    auto vb_value = UTILS::AkryptManager::getInstance().getVBAvalue();
+
+    std::memcpy(iv, vb_value.data(), std::min(vb_value.size(), sizeof(iv) / sizeof(ak_uint8)));
+
+    if (ak_bckey_create_kuznechik(&kuznechik_key) != ak_error_ok)
+    {
+        spdlog::error(" Unable to create kuznechik bckey. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    if (ak_bckey_set_key(&kuznechik_key, this->m_X_s, 32) != ak_error_ok)
+    {
+        spdlog::error(" Unable to set kuznechik key. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    if (m_R_e_text == nullptr)
+    {
+        spdlog::error(" R_e is not provided. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    delete[] this->m_P_s_text;
+    this->m_P_s_text = new ak_uint64[32];
+    //this->m_P_s_text = new ak_uint64[sizeof(this->m_R_e_text) / sizeof(ak_uint64)];
+
+    //if (ak_bckey_ctr(&kuznechik_key, this->m_R_e_text, this->m_P_s_text, sizeof(this->m_R_e_text) / sizeof(ak_uint64), iv, sizeof(iv) / sizeof(ak_uint8)) != ak_error_ok)
+    if (ak_bckey_ctr(&kuznechik_key, this->m_R_e_text, this->m_P_s_text, 32, iv, sizeof(iv) / sizeof(ak_uint8)) != ak_error_ok)
+    {
+        spdlog::error(" Unable to decrypt Xi_se. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} Xi_se dectypted:", this->m_subject_name);
+    spdlog::info("     P_s = {}", ak_mpzn_to_hexstr(this->m_P_s_text, ak_mpzn256_size));
+    spdlog::info("     R_e = {}", ak_mpzn_to_hexstr(this->m_R_e_text, ak_mpzn256_size));
+
+    return true;
+}
+
+bool Subject::generateKkey()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate K key. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    ak_oid streebog_oid;
+    ak_pointer streebog_ptr;
+
+    streebog_oid = ak_oid_find_by_name("hmac-streebog512");
+    streebog_ptr = ak_oid_new_object(streebog_oid);
+
+    ak_uint8 buffer[128];
+    std::memset(buffer, 0, sizeof(buffer) / sizeof(ak_uint8));
+
+    const std::string password = UTILS::AkryptHelper::makePointsToString(this->m_Q_se_point, ak_mpzn256_size);
+    const std::string hash = UTILS::AkryptManager::getInstance().getHMACSeed();
+
+    ak_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)password.c_str(), password.size(), (void*)hash.c_str(), hash.size());
+
+    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H2_s, std::strlen(this->m_H2_s), buffer, sizeof(buffer) / sizeof(ak_uint8));
+
+    std::string k_key_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size((ak_hmac)streebog_ptr), ak_false);
+
+    spdlog::info(" {} K key generated:", this->m_subject_name);
+    spdlog::info("     {}", k_key_result);
 
     return true;
 }
