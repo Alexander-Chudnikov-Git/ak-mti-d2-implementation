@@ -299,6 +299,7 @@ bool Subject::calculateQPoint()
         return false;
     }
 
+    // Those calculations are probably wrong
     /*wpoint temp_point_1 = {};
     wpoint temp_point_2 = {};
 
@@ -307,7 +308,6 @@ bool Subject::calculateQPoint()
     ak_wpoint_set_wpoint(&this->m_Q_se_point, &temp_point_1, this->m_cert_s.get()->vkey.wc);
     ak_wpoint_add(&this->m_Q_se_point, &temp_point_2, this->m_cert_s.get()->vkey.wc);*/
 
-    //ak_wpoint_set_wpoint(&this->m_Q_se_point, &temp_point_1, this->m_cert_s.get()->vkey.wc);
     ak_uint64 result[4];
     std::memset(result, 0, sizeof(result));
 
