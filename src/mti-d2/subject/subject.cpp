@@ -190,7 +190,7 @@ bool Subject::generateRandomXiScalar()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to generate random Xi point. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to generate random Xi point. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -198,14 +198,14 @@ bool Subject::generateRandomXiScalar()
 
     if (ak_random_create_lcg(&generator) != ak_error_ok)
     {
-        spdlog::error(" Unable to initialize LCG random number generator.");
+        spdlog::error("Unable to initialize LCG random number generator.");
         return false;
     }
 
     // Add check for for Fq
     if (ak_random_ptr(&generator, this->m_Xi_s_key, sizeof(this->m_Xi_s_key)) != ak_error_ok)
     {
-        spdlog::error(" Failed to generate random values.");
+        spdlog::error("Failed to generate random values.");
         ak_random_destroy(&generator);
         return false;
     }
@@ -222,7 +222,7 @@ bool Subject::generateRandomXiSEScalar()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to generate random Xi point. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to generate random Xi point. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -230,14 +230,14 @@ bool Subject::generateRandomXiSEScalar()
 
     if (ak_random_create_lcg(&generator) != ak_error_ok)
     {
-        spdlog::error(" Unable to initialize LCG random number generator.");
+        spdlog::error("Unable to initialize LCG random number generator.");
         return false;
     }
 
     // Add check for for Fq
     if (ak_random_ptr(&generator, this->m_Xi_se_key, sizeof(this->m_Xi_se_key)) != ak_error_ok)
     {
-        spdlog::error(" Failed to generate random values.");
+        spdlog::error("Failed to generate random values.");
         ak_random_destroy(&generator);
         return false;
     }
@@ -254,7 +254,7 @@ bool Subject::calculateEPoint()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to calculate E point. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to calculate E point. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -274,7 +274,7 @@ bool Subject::calculateСPoint()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to calculate C point. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to calculate C point. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -295,7 +295,7 @@ bool Subject::calculateQPoint()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to calculate Q point. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to calculate Q point. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -316,7 +316,7 @@ bool Subject::calculateQPoint()
 
     ak_wpoint_reduce(&this->m_Q_se_point, this->m_cert_s.get()->vkey.wc);
 
-    spdlog::info("{} Q_se point:", this->m_subject_name);
+    spdlog::info(" {} Q_se point:", this->m_subject_name);
     UTILS::AkryptHelper::logWPoint(this->m_Q_se_point, ak_mpzn256_size);
 
     return true;
@@ -326,7 +326,7 @@ bool Subject::extractSerialNumber()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to extract serial number. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to extract serial number. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -343,7 +343,7 @@ bool Subject::extractCASerialNumber()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to extract CA serial number. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to extract CA serial number. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -360,7 +360,7 @@ bool Subject::extractExternPublicKey()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to extract subject ID. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to extract subject ID. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -375,7 +375,7 @@ bool Subject::checkExternEPoint()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable verify extern E point. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable verify extern E point. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -383,7 +383,7 @@ bool Subject::checkExternEPoint()
 
     if (!ak_wpoint_is_ok(&this->m_E_e_point, this->m_cert_s.get()->vkey.wc))
     {
-        spdlog::error(" Extern E point is not on the curve. Subject {}.", this->m_subject_name);
+        spdlog::error("Extern E point is not on the curve. Subject {}.", this->m_subject_name);
         return false;
     }
 
@@ -396,7 +396,7 @@ bool Subject::findExternCert()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to find extern certificate. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to find extern certificate. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -418,11 +418,11 @@ bool Subject::findExternCert()
 
     if (std::memcmp(this->m_cert_e.get()->opts.serialnum, this->m_e_serialnum, this->m_e_serialnum_length) != 0)
     {
-        spdlog::error(" Extern certificate has wrong serial number. Subject {}.", this->m_subject_name);
-        spdlog::error(" Expected serial number:");
-        spdlog::error("     {}", ak_ptr_to_hexstr(this->m_e_serialnum, this->m_e_serialnum_length, ak_false));
-        spdlog::error(" Real serial number:");
-        spdlog::error("     {}", ak_ptr_to_hexstr(this->m_cert_e.get()->opts.serialnum, this->m_cert_e.get()->opts.serialnum_length, ak_false));
+        spdlog::error("Extern certificate has wrong serial number. Subject {}.", this->m_subject_name);
+        spdlog::error("Expected serial number:");
+        spdlog::error("    {}", ak_ptr_to_hexstr(this->m_e_serialnum, this->m_e_serialnum_length, ak_false));
+        spdlog::error("Real serial number:");
+        spdlog::error("    {}", ak_ptr_to_hexstr(this->m_cert_e.get()->opts.serialnum, this->m_cert_e.get()->opts.serialnum_length, ak_false));
         return false;
     }
 
@@ -435,17 +435,17 @@ bool Subject::verifyCaSerialNumber()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to verify CA certficate. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to verify CA certficate. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
     if (std::memcmp(this->m_cert_ca.get()->opts.serialnum, this->m_ca_serialnum, this->m_ca_serialnum_length) != 0)
     {
-        spdlog::error(" CA certificate has wrong serial number. Subject {}.", this->m_subject_name);
-        spdlog::error(" Expected serial number:");
-        spdlog::error("     {}", ak_ptr_to_hexstr(this->m_ca_serialnum, this->m_ca_serialnum_length, ak_false));
-        spdlog::error(" Real serial number:");
-        spdlog::error("     {}", ak_ptr_to_hexstr(this->m_cert_ca.get()->opts.serialnum, this->m_cert_ca.get()->opts.serialnum_length, ak_false));
+        spdlog::error("CA certificate has wrong serial number. Subject {}.", this->m_subject_name);
+        spdlog::error("Expected serial number:");
+        spdlog::error("    {}", ak_ptr_to_hexstr(this->m_ca_serialnum, this->m_ca_serialnum_length, ak_false));
+        spdlog::error("Real serial number:");
+        spdlog::error("    {}", ak_ptr_to_hexstr(this->m_cert_ca.get()->opts.serialnum, this->m_cert_ca.get()->opts.serialnum_length, ak_false));
         return false;
     }
 
@@ -458,13 +458,13 @@ bool Subject::verifyWCType()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to verify elliptic curve id. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to verify elliptic curve id. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
     if (this->m_e_wc_id != this->m_cert_s.get()->vkey.wc->id)
     {
-        spdlog::error(" Elliptic curves differ from each other. Subject {}.", this->m_subject_name);
+        spdlog::error("Elliptic curves differ from each other. Subject {}.", this->m_subject_name);
         return false;
     }
 
@@ -477,17 +477,17 @@ bool Subject::verifyExternCa()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to verify extern certificate using CA. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to verify extern certificate using CA. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
     if (std::memcmp(this->m_cert_ca.get()->opts.serialnum, this->m_cert_e.get()->opts.issuer_serialnum, this->m_cert_ca.get()->opts.serialnum_length) != 0)
     {
-        spdlog::error(" Extern certificate is generated by other CA. Subject {}.", this->m_subject_name);
-        spdlog::error(" Expected serial number:");
-        spdlog::error("     {}", ak_ptr_to_hexstr(this->m_cert_ca.get()->opts.serialnum, this->m_cert_ca.get()->opts.serialnum_length, ak_false));
-        spdlog::error(" Real serial number:");
-        spdlog::error("     {}", ak_ptr_to_hexstr(this->m_cert_e.get()->opts.issuer_serialnum, this->m_cert_e.get()->opts.issuer_serialnum_length, ak_false));
+        spdlog::error("Extern certificate is generated by other CA. Subject {}.", this->m_subject_name);
+        spdlog::error("Expected serial number:");
+        spdlog::error("    {}", ak_ptr_to_hexstr(this->m_cert_ca.get()->opts.serialnum, this->m_cert_ca.get()->opts.serialnum_length, ak_false));
+        spdlog::error("Real serial number:");
+        spdlog::error("    {}", ak_ptr_to_hexstr(this->m_cert_e.get()->opts.issuer_serialnum, this->m_cert_e.get()->opts.issuer_serialnum_length, ak_false));
         return false;
     }
 
@@ -495,13 +495,13 @@ bool Subject::verifyExternCa()
 
     if((this->m_cert_ca.get()->opts.time.not_before > now) || (this->m_cert_ca.get()->opts.time.not_after < now))
     {
-        spdlog::error(" CA certificate has expired. {}.", this->m_subject_name);
+        spdlog::error("CA certificate has expired. {}.", this->m_subject_name);
         return false;
     }
 
         if((this->m_cert_e.get()->opts.time.not_before > now) || (this->m_cert_e.get()->opts.time.not_after < now))
     {
-        spdlog::error(" Extern certificate has expired. {}.", this->m_subject_name);
+        spdlog::error("Extern certificate has expired. {}.", this->m_subject_name);
         return false;
     }
 
@@ -519,7 +519,7 @@ bool Subject::verifyExternCa()
 
     if (ak_certificate_import_from_asn1(this->m_cert_e.get(), this->m_cert_ca.get(), test_asn_1) != ak_error_ok)
     {
-        spdlog::error(" Signature verification failed {}.", this->m_subject_name);
+        spdlog::error("Signature verification failed {}.", this->m_subject_name);
         ak_certificate_destroy(&test_ca);
         return false;
     }
@@ -536,13 +536,13 @@ bool Subject::verifyXDiff()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to verify x difference. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to verify x difference. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
     if (std::equal(std::begin(this->m_E_e_point.x), std::end(this->m_E_e_point.x), std::begin(this->m_Q_e_point.x)))
     {
-        spdlog::error(" X coordinates are the same. Subject {}.", this->m_subject_name);
+        spdlog::error("X coordinates are the same. Subject {}.", this->m_subject_name);
         return false;
     }
     spdlog::info(" E_e and Q_e differ. Subject {}.", this->m_subject_name);
@@ -554,13 +554,13 @@ bool Subject::verifyPDiff()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to verify x difference. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to verify x difference. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
     if (std::equal(std::begin(this->m_С_e_point.x), std::end(this->m_С_e_point.x), std::begin(this->m_cert_e.get()->vkey.qpoint.x)))
     {
-        spdlog::error(" X coordinates are the same. Subject {}.", this->m_subject_name);
+        spdlog::error("X coordinates are the same. Subject {}.", this->m_subject_name);
         return false;
     }
     spdlog::info(" C_e and P differ. Subject {}.", this->m_subject_name);
@@ -572,13 +572,13 @@ bool Subject::getIdentifierS()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to extract self certificate ID. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to extract self certificate ID. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
     if (this->m_cert_s.get()->opts.subject == nullptr)
     {
-        spdlog::error(" Provided certificate has no subject option. Subject {}.", this->m_subject_name);
+        spdlog::error("Provided certificate has no subject option. Subject {}.", this->m_subject_name);
         return false;
     }
 
@@ -586,7 +586,7 @@ bool Subject::getIdentifierS()
 
     if (temp_id_s == nullptr)
     {
-        spdlog::error(" Unable to extract self certificate ID. Subject {}.", this->m_subject_name);
+        spdlog::error("Unable to extract self certificate ID. Subject {}.", this->m_subject_name);
         return false;
     }
 
@@ -609,13 +609,13 @@ bool Subject::getIdentifierE()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to extract extern certificate ID. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to extract extern certificate ID. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
     if (this->m_cert_e.get()->opts.subject == nullptr)
     {
-        spdlog::error(" Provided certificate has no subject option. Subject {}.", this->m_subject_name);
+        spdlog::error("Provided certificate has no subject option. Subject {}.", this->m_subject_name);
         return false;
     }
 
@@ -641,7 +641,7 @@ bool Subject::generateH1ValueS()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to generate H value. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to generate H value. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -658,12 +658,12 @@ bool Subject::generateH1ValueS()
 
     if (this->m_id_e == nullptr)
     {
-        spdlog::error(" Unable to create H value. Subject {}.", this->m_subject_name);
+        spdlog::error("Unable to create H value. Subject {}.", this->m_subject_name);
         return false;
     }
 
     spdlog::info(" {} H value generated:", this->m_subject_name);
-    spdlog::info("     {}", ss.str());
+    UTILS::AkryptHelper::logStringInBlocks(ss.str());
 
     return true;
 }
@@ -672,7 +672,7 @@ bool Subject::generateH1ValueE()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to generate H value. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to generate H value. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -689,12 +689,12 @@ bool Subject::generateH1ValueE()
 
     if (this->m_id_e == nullptr)
     {
-        spdlog::error(" Unable to create H value. Subject {}.", this->m_subject_name);
+        spdlog::error("Unable to create H value. Subject {}.", this->m_subject_name);
         return false;
     }
 
     spdlog::info(" {} H value generated:", this->m_subject_name);
-    spdlog::info("     {}", ss.str());
+    UTILS::AkryptHelper::logStringInBlocks(ss.str());
 
     return true;
 }
@@ -703,7 +703,7 @@ bool Subject::generateH2ValueS()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to generate H2 value. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to generate H2 value. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -720,12 +720,12 @@ bool Subject::generateH2ValueS()
 
     if (this->m_id_e == nullptr)
     {
-        spdlog::error(" Unable to create H2 value. Subject {}.", this->m_subject_name);
+        spdlog::error("Unable to create H2 value. Subject {}.", this->m_subject_name);
         return false;
     }
 
     spdlog::info(" {} H2 value generated:", this->m_subject_name);
-    spdlog::info("     {}", ss.str());
+    UTILS::AkryptHelper::logStringInBlocks(ss.str());
 
     return true;
 }
@@ -734,7 +734,7 @@ bool Subject::generateH2ValueE()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to generate H2 value. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to generate H2 value. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -751,12 +751,12 @@ bool Subject::generateH2ValueE()
 
     if (this->m_id_e == nullptr)
     {
-        spdlog::error(" Unable to create H2 value. Subject {}.", this->m_subject_name);
+        spdlog::error("Unable to create H2 value. Subject {}.", this->m_subject_name);
         return false;
     }
 
     spdlog::info(" {} H2 value generated:", this->m_subject_name);
-    spdlog::info("     {}", ss.str());
+    UTILS::AkryptHelper::logStringInBlocks(ss.str());
 
     return true;
 }
@@ -765,7 +765,7 @@ bool Subject::generateM1ValueS()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to generate M1 value. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to generate M1 value. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -782,12 +782,12 @@ bool Subject::generateM1ValueS()
 
     if (this->m_id_e == nullptr)
     {
-        spdlog::error(" Unable to create M1 value. Subject {}.", this->m_subject_name);
+        spdlog::error("Unable to create M1 value. Subject {}.", this->m_subject_name);
         return false;
     }
 
     spdlog::info(" {} M1 value generated:", this->m_subject_name);
-    spdlog::info("     {}", ss.str());
+    UTILS::AkryptHelper::logStringInBlocks(ss.str());
 
     return true;
 }
@@ -796,7 +796,7 @@ bool Subject::generateM1ValueE()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to generate M1 value. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to generate M1 value. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -813,12 +813,12 @@ bool Subject::generateM1ValueE()
 
     if (this->m_id_e == nullptr)
     {
-        spdlog::error(" Unable to create M1 value. Subject {}.", this->m_subject_name);
+        spdlog::error("Unable to create M1 value. Subject {}.", this->m_subject_name);
         return false;
     }
 
     spdlog::info(" {} M1 value generated:", this->m_subject_name);
-    spdlog::info("     {}", ss.str());
+    UTILS::AkryptHelper::logStringInBlocks(ss.str());
 
     return true;
 }
@@ -827,7 +827,7 @@ bool Subject::generateMAC()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to generate MAC. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to generate MAC. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -865,7 +865,7 @@ bool Subject::generateHMAC()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to generate HMAC. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to generate HMAC. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -927,7 +927,7 @@ bool Subject::encryptXivalue()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to encrypt Xi_se. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to encrypt Xi_se. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -940,13 +940,13 @@ bool Subject::encryptXivalue()
 
     if (ak_bckey_create_kuznechik(&kuznechik_key) != ak_error_ok)
     {
-        spdlog::error(" Unable to create kuznechik bckey. Subject {}.", this->m_subject_name);
+        spdlog::error("Unable to create kuznechik bckey. Subject {}.", this->m_subject_name);
         return false;
     }
 
     if (ak_bckey_set_key(&kuznechik_key, this->m_X_s, 32) != ak_error_ok)
     {
-        spdlog::error(" Unable to set kuznechik key. Subject {}.", this->m_subject_name);
+        spdlog::error("Unable to set kuznechik key. Subject {}.", this->m_subject_name);
         return false;
     }
 
@@ -955,7 +955,7 @@ bool Subject::encryptXivalue()
 
     if (ak_bckey_ctr(&kuznechik_key, this->m_Xi_se_key, this->m_R_s_text, sizeof(this->m_Xi_se_key), iv, sizeof(iv)) != ak_error_ok)
     {
-        spdlog::error(" Unable to encrypt Xi_se. Subject {}.", this->m_subject_name);
+        spdlog::error("Unable to encrypt Xi_se. Subject {}.", this->m_subject_name);
         return false;
     }
 
@@ -970,7 +970,7 @@ bool Subject::decryptXivalue()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to decrypt Xi_se. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to decrypt Xi_se. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -983,19 +983,19 @@ bool Subject::decryptXivalue()
 
     if (ak_bckey_create_kuznechik(&kuznechik_key) != ak_error_ok)
     {
-        spdlog::error(" Unable to create kuznechik bckey. Subject {}.", this->m_subject_name);
+        spdlog::error("Unable to create kuznechik bckey. Subject {}.", this->m_subject_name);
         return false;
     }
 
     if (ak_bckey_set_key(&kuznechik_key, this->m_X_s, 32) != ak_error_ok)
     {
-        spdlog::error(" Unable to set kuznechik key. Subject {}.", this->m_subject_name);
+        spdlog::error("Unable to set kuznechik key. Subject {}.", this->m_subject_name);
         return false;
     }
 
     if (m_R_e_text == nullptr)
     {
-        spdlog::error(" R_e is not provided. Subject {}.", this->m_subject_name);
+        spdlog::error("R_e is not provided. Subject {}.", this->m_subject_name);
         return false;
     }
 
@@ -1006,7 +1006,7 @@ bool Subject::decryptXivalue()
     //if (ak_bckey_ctr(&kuznechik_key, this->m_R_e_text, this->m_P_s_text, sizeof(this->m_R_e_text) / sizeof(ak_uint64), iv, sizeof(iv) / sizeof(ak_uint8)) != ak_error_ok)
     if (ak_bckey_ctr(&kuznechik_key, this->m_R_e_text, this->m_P_s_text, 32, iv, sizeof(iv)) != ak_error_ok)
     {
-        spdlog::error(" Unable to decrypt Xi_se. Subject {}.", this->m_subject_name);
+        spdlog::error("Unable to decrypt Xi_se. Subject {}.", this->m_subject_name);
         return false;
     }
 
@@ -1021,7 +1021,7 @@ bool Subject::generateKkey()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to generate K key. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to generate K key. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
@@ -1048,7 +1048,7 @@ bool Subject::generateKkey()
 
     if (sizeof(buffer) % sizeof(ak_uint64) != 0)
     {
-        spdlog::error(" K key buffer size is not a multiple of ak_uint64 size for Subject {}.", this->m_subject_name);
+        spdlog::error("K key buffer size is not a multiple of ak_uint64 size for Subject {}.", this->m_subject_name);
         ak_hmac_destroy((ak_hmac)streebog_ptr);
         return false;
 
@@ -1065,21 +1065,21 @@ bool Subject::validateMAC()
 {
     if (!this->m_initialized)
     {
-        spdlog::error(" Unable to validate MAC. Subject {} is not initialized.", this->m_subject_name);
+        spdlog::error("Unable to validate MAC. Subject {} is not initialized.", this->m_subject_name);
         return false;
     }
 
     if (this->m_T_s == nullptr || this->m_T_e == nullptr)
     {
-        spdlog::error(" MAC validation failed, missing MAC for Subject {}.", this->m_subject_name);
+        spdlog::error("MAC validation failed, missing MAC for Subject {}.", this->m_subject_name);
         return false;
     }
 
     if (std::strcmp(this->m_T_s, this->m_T_e) != 0)
     {
-        spdlog::error(" MAC validation failed, MAC differ for Subject {}.", this->m_subject_name);
-        spdlog::error("     T_s = {}", this->m_T_s);
-        spdlog::error("     T_e = {}", this->m_T_e);
+        spdlog::error("MAC validation failed, MAC differ for Subject {}.", this->m_subject_name);
+        spdlog::error("   T_s = {}", this->m_T_s);
+        spdlog::error("   T_e = {}", this->m_T_e);
         return false;
     }
 
@@ -1243,7 +1243,7 @@ void Subject::setTE(const char* t_e)
 
     if (t_e == nullptr)
     {
-        spdlog::error(" {} recieved empty T", this->m_subject_name);
+        spdlog::error("{} recieved empty T", this->m_subject_name);
         return;
     }
 

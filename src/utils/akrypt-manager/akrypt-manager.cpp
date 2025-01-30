@@ -20,7 +20,7 @@ bool AkryptManager::startUsing()
         this->m_ak_audit = ak_function_log_syslog;
         if (ak_libakrypt_create(this->m_ak_audit) != ak_true)
         {
-            spdlog::error(" Unable to initialize akrypt.");
+            spdlog::error("Unable to initialize akrypt.");
 
             this->m_ak_initialized = false;
             ak_libakrypt_destroy();
@@ -91,7 +91,7 @@ void AkryptManager::setVBAvalue(std::string& value)
 {
     if (value.size() != 16)
     {
-        spdlog::error(" Invalid uv parameter size provided.");
+        spdlog::error("Invalid uv parameter size provided.");
         return;
     }
 
@@ -102,7 +102,7 @@ void AkryptManager::setVABvalue(std::string& value)
 {
     if (value.size() != 16)
     {
-        spdlog::error(" Invalid uv parameter size provided.");
+        spdlog::error("Invalid uv parameter size provided.");
         return;
     }
 
@@ -113,7 +113,7 @@ void AkryptManager::setUBAvalue(std::string& value)
 {
     if (value.size() != 16)
     {
-        spdlog::error(" Invalid uv parameter size provided.");
+        spdlog::error("Invalid uv parameter size provided.");
         return;
     }
 
@@ -124,7 +124,7 @@ void AkryptManager::setUABvalue(std::string& value)
 {
     if (value.size() != 16)
     {
-        spdlog::error(" Invalid uv parameter size provided.");
+        spdlog::error("Invalid uv parameter size provided.");
         return;
     }
 

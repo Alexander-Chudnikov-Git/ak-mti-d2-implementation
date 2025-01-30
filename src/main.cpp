@@ -35,7 +35,7 @@ int main(const int argc, const char** argv)
 
     if (!option_parser.hasOption("c"))
     {
-        spdlog::error(" CA cert is required for this application to work.");
+        spdlog::error("CA cert is required for this application to work.");
         option_parser.logHelp();
         exit(2);
     }
@@ -50,7 +50,7 @@ int main(const int argc, const char** argv)
     /*
     if (!option_parser.hasOption("C"))
     {
-        spdlog::error(" CA key is required for this application to work.");
+        spdlog::error("CA key is required for this application to work.");
         option_parser.logHelp();
         exit(2);
     }
@@ -61,7 +61,7 @@ int main(const int argc, const char** argv)
 
     if (!option_parser.hasOption("a"))
     {
-        spdlog::error(" Subject A certificate is required for this application to work.");
+        spdlog::error("Subject A certificate is required for this application to work.");
         option_parser.logHelp();
         exit(2);
     }
@@ -75,7 +75,7 @@ int main(const int argc, const char** argv)
 
     if (!option_parser.hasOption("A"))
     {
-        spdlog::error(" Subject A secret key is required for this application to work.");
+        spdlog::error("Subject A secret key is required for this application to work.");
         option_parser.logHelp();
         exit(2);
     }
@@ -89,7 +89,7 @@ int main(const int argc, const char** argv)
 
     if (!option_parser.hasOption("b"))
     {
-        spdlog::error(" Subject B certificate is required for this application to work.");
+        spdlog::error("Subject B certificate is required for this application to work.");
         option_parser.logHelp();
         exit(2);
     }
@@ -103,7 +103,7 @@ int main(const int argc, const char** argv)
 
     if (!option_parser.hasOption("B"))
     {
-        spdlog::error(" Subject B secret key is required for this application to work.");
+        spdlog::error("Subject B secret key is required for this application to work.");
         option_parser.logHelp();
         exit(2);
     }

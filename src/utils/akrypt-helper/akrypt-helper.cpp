@@ -11,7 +11,7 @@ AkryptCertificate AkryptHelper::loadCertificate(const std::string& certificate_p
 
     if (!UTILS::AkryptManager::getInstance().isInitialized())
     {
-        spdlog::error(" Libakrypt is not initialized.");
+        spdlog::error("Libakrypt is not initialized.");
         UTILS::AkryptManager::getInstance().stopUsing();
         return AkryptCertificate();
     }
@@ -27,7 +27,7 @@ AkryptCertificate AkryptHelper::loadCertificate(const std::string& certificate_p
 
         if (error != ak_error_ok)
         {
-            spdlog::error(" Unable to generate certificate options. {}", getAkErrorDescription(error));
+            spdlog::error("Unable to generate certificate options. {}", getAkErrorDescription(error));
             destroyCertificate(raw_cert);
 
             UTILS::AkryptManager::getInstance().stopUsing();
@@ -37,7 +37,7 @@ AkryptCertificate AkryptHelper::loadCertificate(const std::string& certificate_p
 
         if (ca_cert.get() != nullptr && !ca_cert.isCA())
         {
-            spdlog::error(" Unable to import certificate. {}", getAkErrorDescription(ak_error_certificate_ca));
+            spdlog::error("Unable to import certificate. {}", getAkErrorDescription(ak_error_certificate_ca));
             destroyCertificate(raw_cert);
 
             UTILS::AkryptManager::getInstance().stopUsing();
@@ -49,7 +49,7 @@ AkryptCertificate AkryptHelper::loadCertificate(const std::string& certificate_p
 
         if (error != ak_error_ok)
         {
-            spdlog::error(" Unable to import certificate from file. {}", getAkErrorDescription(error));
+            spdlog::error("Unable to import certificate from file. {}", getAkErrorDescription(error));
             destroyCertificate(raw_cert);
 
             UTILS::AkryptManager::getInstance().stopUsing();
@@ -66,7 +66,7 @@ AkryptCertificate AkryptHelper::loadCertificate(const std::string& certificate_p
     }
     catch (const std::exception& e)
     {
-        spdlog::error(" An error occurred: {}", e.what());
+        spdlog::error("An error occurred: {}", e.what());
 
         UTILS::AkryptManager::getInstance().stopUsing();
         return AkryptCertificate();
@@ -88,7 +88,7 @@ AkryptSkey AkryptHelper::loadSkey(const std::string& skey_path)
 
     if (!UTILS::AkryptManager::getInstance().isInitialized())
     {
-        spdlog::error(" Libakrypt is not initialized.");
+        spdlog::error("Libakrypt is not initialized.");
         UTILS::AkryptManager::getInstance().stopUsing();
         return AkryptSkey();
     }
@@ -98,7 +98,7 @@ AkryptSkey AkryptHelper::loadSkey(const std::string& skey_path)
 
     if (raw_skey == nullptr)
     {
-        spdlog::error(" Failed to load secret key from file. {}", skey_path);
+        spdlog::error("Failed to load secret key from file. {}", skey_path);
         UTILS::AkryptManager::getInstance().stopUsing();
         ak_skey_delete(raw_skey);
         return AkryptSkey();
@@ -147,6 +147,19 @@ void AkryptHelper::logWPoint(struct wpoint& wpoint, const size_t size)
     spdlog::info("     x-{}", ak_mpzn_to_hexstr(wpoint.x, size));
     spdlog::info("     y-{}", ak_mpzn_to_hexstr(wpoint.y, size));
     spdlog::info("     z-{}", ak_mpzn_to_hexstr(wpoint.z, size));
+}
+
+void AkryptHelper::logStringInBlocks(const std::string& input)
+{
+    constexpr size_t BLOCK_SIZE = 64;
+    size_t totalBlocks = (input.size() + BLOCK_SIZE - 1) / BLOCK_SIZE;
+
+    for (size_t i = 0; i < totalBlocks; ++i)
+    {
+        size_t start = i * BLOCK_SIZE;
+        size_t length = std::min(BLOCK_SIZE, input.size() - start);
+        spdlog::info("     {}: {}", i + 1, input.substr(start, length));
+    }
 }
 
 std::string AkryptHelper::makePointsToString(struct wpoint& wpoint, const size_t size)

@@ -302,7 +302,7 @@ bool SubjectAuthenticateA::enter([[maybe_unused]] Subject& subject_a, [[maybe_un
     {
         delete[] old_id;
         delete[] new_id;
-        spdlog::error(" Certificate B id differ fron initial one.");
+        spdlog::error("Certificate B id differ fron initial one.");
         return false;
     }
     else
@@ -499,7 +499,7 @@ bool SubjectAuthenticateB::exit([[maybe_unused]] Subject& subject_a, [[maybe_unu
 
     if (sizeof(exchange_a) != sizeof(exchange_b))
     {
-        spdlog::error(" Exchanged keys are different, exchange failed.");
+        spdlog::error("Exchanged keys are different, exchange failed.");
         return false;
     }
 
@@ -507,7 +507,7 @@ bool SubjectAuthenticateB::exit([[maybe_unused]] Subject& subject_a, [[maybe_unu
     {
         if (exchange_a[i] != exchange_b[i])
         {
-            spdlog::error(" Exchanged keys are different, exchange failed.");
+            spdlog::error("Exchanged keys are different, exchange failed.");
             return false;
         }
     }
@@ -560,7 +560,7 @@ std::tuple<bool, Subject, Subject> Exchanger::perform()
         if (!status)
         {
             spdlog::info("-----------------------------------------------------------");
-            spdlog::error(" Error occurred during enter phase of this step.");
+            spdlog::error("Error occurred during enter phase of this step.");
             break;
         }
 
@@ -569,7 +569,7 @@ std::tuple<bool, Subject, Subject> Exchanger::perform()
         if (!status)
         {
             spdlog::info("-----------------------------------------------------------");
-            spdlog::error(" Error occurred during execute phase of this step.");
+            spdlog::error("Error occurred during execute phase of this step.");
             break;
         }
 
@@ -578,7 +578,7 @@ std::tuple<bool, Subject, Subject> Exchanger::perform()
         if (!status)
         {
             spdlog::info("-----------------------------------------------------------");
-            spdlog::error(" Error occurred during exit phase of this step.");
+            spdlog::error("Error occurred during exit phase of this step.");
             break;
         }
 
