@@ -146,12 +146,12 @@ private:
     char* m_v_es = {nullptr};
 
     /** s stands for 'self' and e for 'extern', so is subject is A, then 's -> a' 'e -> b' **/
-    ak_uint64 m_Xi_s_key[32] = {0}; ///< ξ_a
-    ak_uint64 m_Xi_e_key[32] = {0}; ///< ξ_b
-    ak_uint64 m_Xi_se_key[32] = {0}; ///< ξ_ab
-    ak_uint64 m_Xi_es_key[32] = {0}; ///< ξ_ba
+    ak_uint64 m_Xi_s_key[4] = {0}; ///< ξ_a
+    ak_uint64 m_Xi_e_key[4] = {0}; ///< ξ_b
+    ak_uint64 m_Xi_se_key[4] = {0}; ///< ξ_ab
+    ak_uint64 m_Xi_es_key[4] = {0}; ///< ξ_ba
 
-    ak_uint64 m_K_se_key[32] = {0}; ///< K_ab
+    ak_uint64 m_K_se_key[4] = {0}; ///< K_ab
 
     ak_uint64* m_R_s_text = {nullptr}; ///< R_a
     ak_uint64* m_R_e_text = {nullptr}; ///< R_b

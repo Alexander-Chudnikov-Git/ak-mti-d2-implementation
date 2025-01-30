@@ -203,7 +203,7 @@ bool Subject::generateRandomXiScalar()
     }
 
     // Add check for for Fq
-    if (ak_random_ptr(&generator, this->m_Xi_s_key, sizeof(this->m_Xi_s_key) / sizeof(ak_uint64)) != ak_error_ok)
+    if (ak_random_ptr(&generator, this->m_Xi_s_key, sizeof(this->m_Xi_s_key)) != ak_error_ok)
     {
         spdlog::error(" Failed to generate random values.");
         ak_random_destroy(&generator);
@@ -235,7 +235,7 @@ bool Subject::generateRandomXiSEScalar()
     }
 
     // Add check for for Fq
-    if (ak_random_ptr(&generator, this->m_Xi_se_key, sizeof(this->m_Xi_se_key) / sizeof(ak_uint64)) != ak_error_ok)
+    if (ak_random_ptr(&generator, this->m_Xi_se_key, sizeof(this->m_Xi_se_key)) != ak_error_ok)
     {
         spdlog::error(" Failed to generate random values.");
         ak_random_destroy(&generator);
@@ -260,7 +260,7 @@ bool Subject::calculateEPoint()
 
     auto pubkey_wcurve = this->m_cert_s.get()->vkey.wc;
 
-    ak_wpoint_pow(&this->m_E_s_point, &pubkey_wcurve->point, this->m_Xi_s_key, sizeof(this->m_Xi_s_key), pubkey_wcurve);
+    ak_wpoint_pow(&this->m_E_s_point, &pubkey_wcurve->point, this->m_Xi_s_key, ak_mpzn256_size, pubkey_wcurve);
 
     ak_wpoint_reduce(&this->m_E_s_point, pubkey_wcurve);
 
@@ -278,14 +278,14 @@ bool Subject::calculateСPoint()
         return false;
     }
 
-    this->m_С_s_point = this->m_Q_e_point;
+    this->m_С_e_point = this->m_Q_e_point;
 
-    ak_wpoint_add(&this->m_С_s_point, &this->m_E_e_point, this->m_cert_e.get()->vkey.wc);
+    ak_wpoint_add(&this->m_С_e_point, &this->m_E_e_point, this->m_cert_e.get()->vkey.wc);
 
-    ak_wpoint_reduce(&this->m_С_s_point, this->m_cert_e.get()->vkey.wc);
+    ak_wpoint_reduce(&this->m_С_e_point, this->m_cert_e.get()->vkey.wc);
 
     spdlog::info(" {} C_e point:", this->m_subject_name);
-    UTILS::AkryptHelper::logWPoint(this->m_С_s_point, ak_mpzn256_size);
+    UTILS::AkryptHelper::logWPoint(this->m_С_e_point, ak_mpzn256_size);
 
     return true;
 }
@@ -299,13 +299,20 @@ bool Subject::calculateQPoint()
         return false;
     }
 
-    wpoint temp_point_1 = {};
+    /*wpoint temp_point_1 = {};
     wpoint temp_point_2 = {};
 
-    ak_wpoint_pow(&temp_point_1, &this->m_С_e_point, this->m_Xi_s_key, sizeof(this->m_Xi_s_key) / sizeof(ak_uint64), this->m_cert_s.get()->vkey.wc);
-    ak_wpoint_pow(&temp_point_2, &this->m_С_e_point, reinterpret_cast<ak_uint64 *>(this->m_d_s_key.get()->key), (this->m_d_s_key.get()->key_size / 4), this->m_cert_s.get()->vkey.wc); ///< Yeah, looks painfull
+    ak_wpoint_pow(&temp_point_1, &this->m_С_e_point, this->m_Xi_s_key, sizeof(this->m_Xi_s_key), this->m_cert_s.get()->vkey.wc);
+    ak_wpoint_pow(&temp_point_2, &this->m_С_e_point, reinterpret_cast<ak_uint64 *>(this->m_d_s_key.get()->key), (this->m_d_s_key.get()->key_size >> 2), this->m_cert_s.get()->vkey.wc); ///< Yeah, looks painfull
     ak_wpoint_set_wpoint(&this->m_Q_se_point, &temp_point_1, this->m_cert_s.get()->vkey.wc);
-    ak_wpoint_add(&this->m_Q_se_point, &temp_point_2, this->m_cert_s.get()->vkey.wc);
+    ak_wpoint_add(&this->m_Q_se_point, &temp_point_2, this->m_cert_s.get()->vkey.wc);*/
+
+    //ak_wpoint_set_wpoint(&this->m_Q_se_point, &temp_point_1, this->m_cert_s.get()->vkey.wc);
+    ak_uint64 result[4];
+    std::memset(result, 0, sizeof(result));
+
+    ak_mpzn_add(result, this->m_Xi_s_key, reinterpret_cast<ak_uint64 *>(this->m_d_s_key.get()->key), ak_mpzn256_size);
+    ak_wpoint_pow(&this->m_Q_se_point, &this->m_С_e_point, result, ak_mpzn256_size, this->m_cert_s.get()->vkey.wc);
 
     ak_wpoint_reduce(&this->m_Q_se_point, this->m_cert_s.get()->vkey.wc);
 
@@ -831,14 +838,14 @@ bool Subject::generateMAC()
     streebog_ptr = ak_oid_new_object(streebog_oid);
 
     ak_uint8 buffer[64];
-    std::memset(buffer, 0, sizeof(buffer) / sizeof(ak_uint8));
+    std::memset(buffer, 0, sizeof(buffer));
 
     const std::string hash = UTILS::AkryptManager::getInstance().getHMACSeed();
 
     ak_hmac_set_key_from_password((ak_hmac)streebog_ptr, this->m_Y_s, sizeof(this->m_Y_s), (void*)hash.c_str(), hash.size());
     //k_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)buffer, 128, (void*)hash.c_str(), hash.size()); // DEBUG
 
-    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_M1_s, std::strlen(this->m_M1_s), buffer, sizeof(buffer) / sizeof(ak_uint8));
+    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_M1_s, std::strlen(this->m_M1_s), buffer, sizeof(buffer));
 
     std::string mac_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size((ak_hmac)streebog_ptr), ak_false);
 
@@ -869,7 +876,7 @@ bool Subject::generateHMAC()
     streebog_ptr = ak_oid_new_object(streebog_oid);
 
     ak_uint8 buffer[64];
-    std::memset(buffer, 0, sizeof(buffer) / sizeof(ak_uint8));
+    std::memset(buffer, 0, sizeof(buffer));
 
     const std::string password = UTILS::AkryptHelper::makePointsToString(this->m_Q_se_point, ak_mpzn256_size);
     const std::string hash = UTILS::AkryptManager::getInstance().getHMACSeed();
@@ -877,7 +884,7 @@ bool Subject::generateHMAC()
     ak_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)password.c_str(), password.size(), (void*)hash.c_str(), hash.size());
     //k_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)buffer, 128, (void*)hash.c_str(), hash.size()); // DEBUG
 
-    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H1_s, std::strlen(this->m_H1_s), buffer, sizeof(buffer) / sizeof(ak_uint8));
+    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H1_s, std::strlen(this->m_H1_s), buffer, sizeof(buffer));
 
     std::string hmac_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size((ak_hmac)streebog_ptr), ak_false);
 
@@ -929,7 +936,7 @@ bool Subject::encryptXivalue()
 
     auto vb_value = UTILS::AkryptManager::getInstance().getVBAvalue();
 
-    std::memcpy(iv, vb_value.data(), std::min(vb_value.size(), sizeof(iv) / sizeof(ak_uint8)));
+    std::memcpy(iv, vb_value.data(), std::min(vb_value.size(), sizeof(iv)));
 
     if (ak_bckey_create_kuznechik(&kuznechik_key) != ak_error_ok)
     {
@@ -946,7 +953,7 @@ bool Subject::encryptXivalue()
     delete[] this->m_R_s_text;
     this->m_R_s_text = new ak_uint64[sizeof(this->m_Xi_se_key) / sizeof(ak_uint64)];
 
-    if (ak_bckey_ctr(&kuznechik_key, this->m_Xi_se_key, this->m_R_s_text, sizeof(this->m_Xi_se_key) / sizeof(ak_uint64), iv, sizeof(iv) / sizeof(ak_uint8)) != ak_error_ok)
+    if (ak_bckey_ctr(&kuznechik_key, this->m_Xi_se_key, this->m_R_s_text, sizeof(this->m_Xi_se_key), iv, sizeof(iv)) != ak_error_ok)
     {
         spdlog::error(" Unable to encrypt Xi_se. Subject {}.", this->m_subject_name);
         return false;
@@ -972,7 +979,7 @@ bool Subject::decryptXivalue()
 
     auto vb_value = UTILS::AkryptManager::getInstance().getVBAvalue();
 
-    std::memcpy(iv, vb_value.data(), std::min(vb_value.size(), sizeof(iv) / sizeof(ak_uint8)));
+    std::memcpy(iv, vb_value.data(), std::min(vb_value.size(), sizeof(iv)));
 
     if (ak_bckey_create_kuznechik(&kuznechik_key) != ak_error_ok)
     {
@@ -997,7 +1004,7 @@ bool Subject::decryptXivalue()
     //this->m_P_s_text = new ak_uint64[sizeof(this->m_R_e_text) / sizeof(ak_uint64)];
 
     //if (ak_bckey_ctr(&kuznechik_key, this->m_R_e_text, this->m_P_s_text, sizeof(this->m_R_e_text) / sizeof(ak_uint64), iv, sizeof(iv) / sizeof(ak_uint8)) != ak_error_ok)
-    if (ak_bckey_ctr(&kuznechik_key, this->m_R_e_text, this->m_P_s_text, 32, iv, sizeof(iv) / sizeof(ak_uint8)) != ak_error_ok)
+    if (ak_bckey_ctr(&kuznechik_key, this->m_R_e_text, this->m_P_s_text, 32, iv, sizeof(iv)) != ak_error_ok)
     {
         spdlog::error(" Unable to decrypt Xi_se. Subject {}.", this->m_subject_name);
         return false;
@@ -1025,14 +1032,14 @@ bool Subject::generateKkey()
     streebog_ptr = ak_oid_new_object(streebog_oid);
 
     ak_uint8 buffer[64];
-    std::memset(buffer, 0, sizeof(buffer) / sizeof(ak_uint8));
+    std::memset(buffer, 0, sizeof(buffer));
 
     const std::string password = UTILS::AkryptHelper::makePointsToString(this->m_Q_se_point, ak_mpzn256_size);
     const std::string hash = UTILS::AkryptManager::getInstance().getHMACSeed();
 
     ak_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)password.c_str(), password.size(), (void*)hash.c_str(), hash.size());
 
-    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H2_s, std::strlen(this->m_H2_s), buffer, sizeof(buffer) / sizeof(ak_uint8));
+    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H2_s, std::strlen(this->m_H2_s), buffer, sizeof(buffer));
 
     std::string k_key_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size((ak_hmac)streebog_ptr), ak_false);
 
@@ -1047,7 +1054,7 @@ bool Subject::generateKkey()
 
     }
 
-    std::memcpy(this->m_K_se_key, buffer, sizeof(buffer) / sizeof(ak_uint8));
+    std::memcpy(this->m_K_se_key, buffer, sizeof(buffer));
 
     ak_hmac_destroy((ak_hmac)streebog_ptr);
 
@@ -1092,7 +1099,7 @@ void Subject::setR_s_text(const ak_uint64* r_s_text, ak_uint32 r_s_text_len)
     std::copy(r_s_text, r_s_text + r_s_text_len, this->m_R_s_text);
 
     spdlog::info(" {} recieved R_s text:", this->m_subject_name);
-    spdlog::info("     R_s   = {}", ak_mpzn_to_hexstr(this->m_R_s_text, ak_mpzn256_size));
+    spdlog::info("     R_s = {}", ak_mpzn_to_hexstr(this->m_R_s_text, ak_mpzn256_size));
 }
 
 void Subject::setR_e_text(const ak_uint64* r_e_text, ak_uint32 r_e_text_len)
@@ -1102,7 +1109,7 @@ void Subject::setR_e_text(const ak_uint64* r_e_text, ak_uint32 r_e_text_len)
     std::copy(r_e_text, r_e_text + r_e_text_len, this->m_R_e_text);
 
     spdlog::info(" {} recieved R_e text:", this->m_subject_name);
-    spdlog::info("     R_e   = {}", ak_mpzn_to_hexstr(this->m_R_e_text, ak_mpzn256_size));
+    spdlog::info("     R_e = {}", ak_mpzn_to_hexstr(this->m_R_e_text, ak_mpzn256_size));
 }
 
 void Subject::setE_s_point(const wpoint& E_s_point)
