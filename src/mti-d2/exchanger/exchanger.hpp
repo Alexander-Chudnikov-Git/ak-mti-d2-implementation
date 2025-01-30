@@ -1,21 +1,3 @@
-/**
- * @file       <exchanger.hpp>
- * @brief      Заголовочный файл для класса Exchanger
- *
- *             Класс управления процессом обмена ключами.
- *
- * @author     CHOO_IS_FOX (@Alexander-Chudnikov-Git)
- * @date       20.01.2025
- * @version    0.0.1
- *
- * @bug        На данный момент баги отсутствуют.
- *
- * @copyright  А. А. Чудников, Абдуллабеков Т. М, Хохлов E. A. 2025
- *
- * @license    Данный проект находится под публичной лицензией GNUv3.
- *
- */
-
 #ifndef EXCHANGER_HPP
 #define EXCHANGER_HPP
 
@@ -154,21 +136,6 @@ public:
 
     bool exit(Subject& subject_a, Subject& subject_b) override;
 };
-
-/**
- * @brief      Шаг идентификации субъекта B по сертификату [!]
- */
-class IdentifySubjectWithCertificateB : public ExchangerStep
-{
-public:
-
-    bool enter(Subject& subject_a, Subject& subject_b) override;
-
-    bool execute(Subject& subject_a, Subject& subject_b) override;
-    
-    bool exit(Subject& subject_a, Subject& subject_b) override;
-};
-
 
 /**
  * @brief      Шаг аутентификации субъекта A [!]

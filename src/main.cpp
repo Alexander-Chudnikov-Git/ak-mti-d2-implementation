@@ -42,6 +42,11 @@ int main(const int argc, const char** argv)
 
     auto ca_cert = UTILS::AkryptHelper::loadCertificate(option_parser.getOption("c"));
 
+    if (!ca_cert.isInitialized())
+    {
+        exit(2);
+    }
+
     /*
     if (!option_parser.hasOption("C"))
     {
@@ -63,6 +68,11 @@ int main(const int argc, const char** argv)
 
     auto a_cert = UTILS::AkryptHelper::loadCertificate(option_parser.getOption("a"), ca_cert);
 
+    if (!a_cert.isInitialized())
+    {
+        exit(2);
+    }
+
     if (!option_parser.hasOption("A"))
     {
         spdlog::error(" Subject A secret key is required for this application to work.");
@@ -71,6 +81,11 @@ int main(const int argc, const char** argv)
     }
 
     auto a_key = UTILS::AkryptHelper::loadSkey(option_parser.getOption("A"));
+
+    if (!a_key.isInitialized())
+    {
+        exit(2);
+    }
 
     if (!option_parser.hasOption("b"))
     {
@@ -81,6 +96,11 @@ int main(const int argc, const char** argv)
 
     auto b_cert = UTILS::AkryptHelper::loadCertificate(option_parser.getOption("b"), ca_cert);
 
+    if (!b_cert.isInitialized())
+    {
+        exit(2);
+    }
+
     if (!option_parser.hasOption("B"))
     {
         spdlog::error(" Subject B secret key is required for this application to work.");
@@ -90,8 +110,19 @@ int main(const int argc, const char** argv)
 
     auto b_key = UTILS::AkryptHelper::loadSkey(option_parser.getOption("B"));
 
+    if (!b_key.isInitialized())
+    {
+        exit(2);
+    }
+
     auto a_subject = MTI_D2::Subject("Subject A", ca_cert, a_cert, a_key, b_cert);
     auto b_subject = MTI_D2::Subject("Subject B", ca_cert, b_cert, b_key, a_cert);
+
+    UTILS::AkryptManager::getInstance().setHMACSeed("random_hmac_seed");
+
+    // Must be 16 symbols
+    std::string uv_value16 = "random_uv_value_";
+    UTILS::AkryptManager::getInstance().setUVvalue(uv_value16);
 
     auto exchanger = MTI_D2::Exchanger();
 

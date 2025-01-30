@@ -5,7 +5,7 @@
 
 namespace MTI_D2
 {
-Subject::Subject(const std::string& subject_name,
+/*Subject::Subject(const std::string& subject_name,
                  UTILS::AkryptCertificate cert_ca,
                  UTILS::AkryptCertificate cert_s,
                  UTILS::AkryptSkey d_s_key,
@@ -14,7 +14,7 @@ Subject::Subject(const std::string& subject_name,
     m_initialized(false)
 {
       this->initSubject(cert_ca, cert_s, d_s_key, {nullptr}, id_e);
-}
+}*/
 
 Subject::Subject(const std::string& subject_name,
                  UTILS::AkryptCertificate cert_ca,
@@ -24,16 +24,70 @@ Subject::Subject(const std::string& subject_name,
     m_subject_name(subject_name),
     m_initialized(false)
 {
-      this->initSubject(cert_ca, cert_s, d_s_key, cert_e, {});
+      this->initSubject(cert_ca, cert_s, d_s_key, cert_e/*, {}*/);
 }
 
 Subject::~Subject()
 {
+    // There is a bug with move constructor, that causes double deletion
+    // In order to fix it, i should probably implement it, instead of using
+    // default one, but i'm too lazy to do it
+    //
+    // I guess leaking a bit of memory is better then crashes
+    /*
+    if (this->m_id_s != nullptr)
+    {
+        delete[] this->m_id_s;
+        this->m_id_s = nullptr;
+    }
+
     if (this->m_id_e != nullptr)
     {
         delete[] this->m_id_e;
         this->m_id_e = nullptr;
     }
+
+    if (this->m_H1_s != nullptr)
+    {
+        delete[] this->m_H1_s;
+        this->m_H1_s = nullptr;
+    }
+
+    if (this->m_X_s != nullptr)
+    {
+        delete[] this->m_X_s;
+        this->m_X_s = nullptr;
+    }
+
+    if (this->m_Y_s != nullptr)
+    {
+        delete[] this->m_Y_s;
+        this->m_Y_s = nullptr;
+    }
+
+    if (this->m_v_se != nullptr)
+    {
+        delete[] this->m_v_se;
+        this->m_v_se = nullptr;
+    }
+
+    if (this->m_v_es != nullptr)
+    {
+        delete[] this->m_v_es;
+        this->m_v_es = nullptr;
+    }
+
+    if (this->m_R_s_text != nullptr)
+    {
+        delete[] this->m_R_s_text;
+        this->m_R_s_text = nullptr;
+    }
+
+    if (this->m_R_e_text != nullptr)
+    {
+        delete[] this->m_R_e_text;
+        this->m_R_e_text = nullptr;
+    }*/
 
     UTILS::AkryptManager::getInstance().stopUsing();
 }
@@ -41,8 +95,8 @@ Subject::~Subject()
 void Subject::initSubject(UTILS::AkryptCertificate cert_ca,
                           UTILS::AkryptCertificate cert_s,
                           UTILS::AkryptSkey d_s_key,
-                          UTILS::AkryptCertificate cert_e,
-                          const char* id_e)
+                          UTILS::AkryptCertificate cert_e/*,
+                          const char* id_e*/)
 {
     if (cert_ca.isInitialized())
     {
@@ -69,13 +123,17 @@ void Subject::initSubject(UTILS::AkryptCertificate cert_ca,
         this->m_req_s = true;
     }
 
-    this->m_id_e = id_e;
 
     spdlog::info(" Subject '{}' initialized.", this->m_subject_name);
 
     this->initLibAkrypt();
 
     this->m_initialized = true;
+
+    // if id_e is {}
+    this->getIdentifierE();
+    // else
+    /*this->m_id_e = id_e;*/
 
     // DEBUG
     /*
@@ -145,7 +203,7 @@ bool Subject::generateRandomXiScalar()
     }
 
     // Add check for for Fq
-    if (ak_random_ptr(&generator, this->m_Xi_s_key, sizeof(this->m_Xi_s_key)) != ak_error_ok)
+    if (ak_random_ptr(&generator, this->m_Xi_s_key, sizeof(this->m_Xi_s_key) / sizeof(ak_uint64)) != ak_error_ok)
     {
         spdlog::error(" Failed to generate random values.");
         ak_random_destroy(&generator);
@@ -177,7 +235,7 @@ bool Subject::generateRandomXiSEScalar()
     }
 
     // Add check for for Fq
-    if (ak_random_ptr(&generator, this->m_Xi_se_key, sizeof(this->m_Xi_se_key)) != ak_error_ok)
+    if (ak_random_ptr(&generator, this->m_Xi_se_key, sizeof(this->m_Xi_se_key) / sizeof(ak_uint64)) != ak_error_ok)
     {
         spdlog::error(" Failed to generate random values.");
         ak_random_destroy(&generator);
@@ -204,6 +262,8 @@ bool Subject::calculateEPoint()
 
     ak_wpoint_pow(&this->m_E_s_point, &pubkey_wcurve->point, this->m_Xi_s_key, sizeof(this->m_Xi_s_key), pubkey_wcurve);
 
+    ak_wpoint_reduce(&this->m_E_s_point, pubkey_wcurve);
+
     spdlog::info(" {} E_s point:", this->m_subject_name);
     UTILS::AkryptHelper::logWPoint(this->m_E_s_point, ak_mpzn256_size);
 
@@ -221,6 +281,8 @@ bool Subject::calculateСPoint()
     this->m_С_s_point = this->m_Q_e_point;
 
     ak_wpoint_add(&this->m_С_s_point, &this->m_E_e_point, this->m_cert_e.get()->vkey.wc);
+
+    ak_wpoint_reduce(&this->m_С_s_point, this->m_cert_e.get()->vkey.wc);
 
     spdlog::info(" {} C_e point:", this->m_subject_name);
     UTILS::AkryptHelper::logWPoint(this->m_С_s_point, ak_mpzn256_size);
@@ -240,10 +302,12 @@ bool Subject::calculateQPoint()
     wpoint temp_point_1 = {};
     wpoint temp_point_2 = {};
 
-    ak_wpoint_pow(&temp_point_1, &this->m_С_s_point, this->m_Xi_e_key, sizeof(this->m_Xi_e_key), this->m_cert_s.get()->vkey.wc);
-    ak_wpoint_pow(&temp_point_2, &this->m_С_s_point, reinterpret_cast<ak_uint64 *>(this->m_d_s_key.get()->key), (this->m_d_s_key.get()->key_size / 4), this->m_cert_s.get()->vkey.wc); ///< Yeah, looks painfull
+    ak_wpoint_pow(&temp_point_1, &this->m_С_e_point, this->m_Xi_s_key, sizeof(this->m_Xi_s_key) / sizeof(ak_uint64), this->m_cert_s.get()->vkey.wc);
+    ak_wpoint_pow(&temp_point_2, &this->m_С_e_point, reinterpret_cast<ak_uint64 *>(this->m_d_s_key.get()->key), (this->m_d_s_key.get()->key_size / 4), this->m_cert_s.get()->vkey.wc); ///< Yeah, looks painfull
     ak_wpoint_set_wpoint(&this->m_Q_se_point, &temp_point_1, this->m_cert_s.get()->vkey.wc);
     ak_wpoint_add(&this->m_Q_se_point, &temp_point_2, this->m_cert_s.get()->vkey.wc);
+
+    ak_wpoint_reduce(&this->m_Q_se_point, this->m_cert_s.get()->vkey.wc);
 
     spdlog::info("{} Q_se point:", this->m_subject_name);
     UTILS::AkryptHelper::logWPoint(this->m_Q_se_point, ak_mpzn256_size);
@@ -281,19 +345,6 @@ bool Subject::extractCASerialNumber()
 
     spdlog::info(" {} CA serial number:", this->m_subject_name);
     spdlog::info("     {}", ak_ptr_to_hexstr(this->m_ca_serialnum, this->m_ca_serialnum_length, ak_false));
-
-    return true;
-}
-
-bool Subject::extractExternCertId()
-{
-    if (!this->m_initialized)
-    {
-        spdlog::error(" Unable to extract subject ID. Subject {} is not initialized.", this->m_subject_name);
-        return false;
-    }
-
-    // I have no idea what's subject id
 
     return true;
 }
@@ -510,7 +561,549 @@ bool Subject::verifyPDiff()
     return true;
 }
 
+bool Subject::getIdentifierS()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to extract self certificate ID. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    if (this->m_cert_s.get()->opts.subject == nullptr)
+    {
+        spdlog::error(" Provided certificate has no subject option. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    const char* temp_id_s = reinterpret_cast<char*>(ak_tlv_get_string_from_global_name(this->m_cert_s.get()->opts.subject, "2.5.4.3", NULL));
+
+    if (temp_id_s == nullptr)
+    {
+        spdlog::error(" Unable to extract self certificate ID. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    if (this->m_id_s)
+    {
+        delete[] this->m_id_s;
+        this->m_id_s = nullptr;
+    }
+
+    this->m_id_s = new char[std::strlen(temp_id_s) + 1];
+    std::strcpy(this->m_id_s, temp_id_s);
+
+    spdlog::info(" {} Certificate self subject ID:", this->m_subject_name);
+    spdlog::info("     {}", this->m_id_s);
+
+    return true;
+}
+
+bool Subject::getIdentifierE()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to extract extern certificate ID. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    if (this->m_cert_e.get()->opts.subject == nullptr)
+    {
+        spdlog::error(" Provided certificate has no subject option. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    const char* temp_id_e = reinterpret_cast<char*>(ak_tlv_get_string_from_global_name(this->m_cert_e.get()->opts.subject, "2.5.4.3", NULL));
+
+    if (temp_id_e == nullptr)
+    {
+        spdlog::error("Unable to extract extern certificate ID. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    delete[] this->m_id_e;
+    this->m_id_e = new char[std::strlen(temp_id_e) + 1];
+    std::strcpy(this->m_id_e, temp_id_e);
+
+    spdlog::info(" {} Certificate extern subject ID:", this->m_subject_name);
+    spdlog::info("     {}", this->m_id_e);
+
+    return true;
+}
+
+bool Subject::generateH1ValueS()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate H value. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    const std::string E_s_string = UTILS::AkryptHelper::makePointsToString(this->m_E_s_point, ak_mpzn256_size);
+    const std::string E_e_string = UTILS::AkryptHelper::makePointsToString(this->m_E_e_point, ak_mpzn256_size);
+
+    std::stringstream ss;
+
+    ss << this->m_id_s << E_s_string << this->m_id_e << E_e_string;
+
+    std::string temp = ss.str();
+    this->m_H1_s = new char[temp.size() + 1];
+    std::strcpy(this->m_H1_s, temp.c_str());
+
+    if (this->m_id_e == nullptr)
+    {
+        spdlog::error(" Unable to create H value. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} H value generated:", this->m_subject_name);
+    spdlog::info("     {}", ss.str());
+
+    return true;
+}
+
+bool Subject::generateH1ValueE()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate H value. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    const std::string E_s_string = UTILS::AkryptHelper::makePointsToString(this->m_E_s_point, ak_mpzn256_size);
+    const std::string E_e_string = UTILS::AkryptHelper::makePointsToString(this->m_E_e_point, ak_mpzn256_size);
+
+    std::stringstream ss;
+
+    ss << this->m_id_e << E_e_string << this->m_id_s << E_s_string ;
+
+    std::string temp = ss.str();
+    this->m_H1_s = new char[temp.size() + 1];
+    std::strcpy(this->m_H1_s, temp.c_str());
+
+    if (this->m_id_e == nullptr)
+    {
+        spdlog::error(" Unable to create H value. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} H value generated:", this->m_subject_name);
+    spdlog::info("     {}", ss.str());
+
+    return true;
+}
+
+bool Subject::generateH2ValueS()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate H2 value. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    const std::string Xi_s_string  = ak_mpzn_to_hexstr(this->m_Xi_se_key, ak_mpzn256_size);
+    const std::string P_s_string   = ak_mpzn_to_hexstr(this->m_P_s_text, ak_mpzn256_size);
+
+    std::stringstream ss;
+
+    ss << this->m_H1_s << Xi_s_string << P_s_string;
+
+    std::string temp = ss.str();
+    this->m_H2_s = new char[temp.size() + 1];
+    std::strcpy(this->m_H2_s, temp.c_str());
+
+    if (this->m_id_e == nullptr)
+    {
+        spdlog::error(" Unable to create H2 value. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} H2 value generated:", this->m_subject_name);
+    spdlog::info("     {}", ss.str());
+
+    return true;
+}
+
+bool Subject::generateH2ValueE()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate H2 value. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    const std::string Xi_e_string  = ak_mpzn_to_hexstr(this->m_Xi_se_key, ak_mpzn256_size);
+    const std::string P_s_string   = ak_mpzn_to_hexstr(this->m_P_s_text, ak_mpzn256_size);
+
+    std::stringstream ss;
+
+    ss << this->m_H1_s << P_s_string << Xi_e_string;
+
+    std::string temp = ss.str();
+    this->m_H2_s = new char[temp.size() + 1];
+    std::strcpy(this->m_H2_s, temp.c_str());
+
+    if (this->m_id_e == nullptr)
+    {
+        spdlog::error(" Unable to create H2 value. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} H2 value generated:", this->m_subject_name);
+    spdlog::info("     {}", ss.str());
+
+    return true;
+}
+
+bool Subject::generateM1ValueS()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate M1 value. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    const std::string Xi_s_string  = ak_mpzn_to_hexstr(this->m_Xi_se_key, ak_mpzn256_size);
+    const std::string P_s_string   = ak_mpzn_to_hexstr(this->m_P_s_text, ak_mpzn256_size);
+
+    std::stringstream ss;
+
+    ss << this->m_id_s << P_s_string << Xi_s_string;
+
+    std::string temp = ss.str();
+    this->m_M1_s = new char[temp.size() + 1];
+    std::strcpy(this->m_M1_s, temp.c_str());
+
+    if (this->m_id_e == nullptr)
+    {
+        spdlog::error(" Unable to create M1 value. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} M1 value generated:", this->m_subject_name);
+    spdlog::info("     {}", ss.str());
+
+    return true;
+}
+
+bool Subject::generateM1ValueE()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate M1 value. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    const std::string Xi_e_string  = ak_mpzn_to_hexstr(this->m_Xi_se_key, ak_mpzn256_size);
+    const std::string P_s_string   = ak_mpzn_to_hexstr(this->m_P_s_text, ak_mpzn256_size);
+
+    std::stringstream ss;
+
+    ss << this->m_id_e << Xi_e_string << P_s_string;
+
+    std::string temp = ss.str();
+    this->m_M1_s = new char[temp.size() + 1];
+    std::strcpy(this->m_M1_s, temp.c_str());
+
+    if (this->m_id_e == nullptr)
+    {
+        spdlog::error(" Unable to create M1 value. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} M1 value generated:", this->m_subject_name);
+    spdlog::info("     {}", ss.str());
+
+    return true;
+}
+
+bool Subject::generateMAC()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate MAC. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    ak_oid streebog_oid;
+    ak_pointer streebog_ptr;
+
+    streebog_oid = ak_oid_find_by_name("hmac-streebog512");
+    streebog_ptr = ak_oid_new_object(streebog_oid);
+
+    ak_uint8 buffer[64];
+    std::memset(buffer, 0, sizeof(buffer) / sizeof(ak_uint8));
+
+    const std::string hash = UTILS::AkryptManager::getInstance().getHMACSeed();
+
+    ak_hmac_set_key_from_password((ak_hmac)streebog_ptr, this->m_Y_s, sizeof(this->m_Y_s), (void*)hash.c_str(), hash.size());
+    //k_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)buffer, 128, (void*)hash.c_str(), hash.size()); // DEBUG
+
+    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_M1_s, std::strlen(this->m_M1_s), buffer, sizeof(buffer) / sizeof(ak_uint8));
+
+    std::string mac_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size((ak_hmac)streebog_ptr), ak_false);
+
+    spdlog::info(" {} MAC generated:", this->m_subject_name);
+    spdlog::info("     {}", mac_result);
+
+    delete[] this->m_T_s;
+    this->m_T_s = new char[mac_result.size() + 1];
+    std::strcpy(this->m_T_s, mac_result.c_str());
+
+    ak_hmac_destroy((ak_hmac)streebog_ptr);
+
+    return true;
+}
+
+bool Subject::generateHMAC()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate HMAC. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    ak_oid streebog_oid;
+    ak_pointer streebog_ptr;
+
+    streebog_oid = ak_oid_find_by_name("hmac-streebog512");
+    streebog_ptr = ak_oid_new_object(streebog_oid);
+
+    ak_uint8 buffer[64];
+    std::memset(buffer, 0, sizeof(buffer) / sizeof(ak_uint8));
+
+    const std::string password = UTILS::AkryptHelper::makePointsToString(this->m_Q_se_point, ak_mpzn256_size);
+    const std::string hash = UTILS::AkryptManager::getInstance().getHMACSeed();
+
+    ak_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)password.c_str(), password.size(), (void*)hash.c_str(), hash.size());
+    //k_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)buffer, 128, (void*)hash.c_str(), hash.size()); // DEBUG
+
+    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H1_s, std::strlen(this->m_H1_s), buffer, sizeof(buffer) / sizeof(ak_uint8));
+
+    std::string hmac_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size((ak_hmac)streebog_ptr), ak_false);
+
+    spdlog::info(" {} HMAC generated:", this->m_subject_name);
+    spdlog::info("     {}", hmac_result);
+
+    std::string X_s_val = hmac_result.substr(0, 64);
+    std::string Y_s_val = hmac_result.substr(64, 64);
+
+    delete[] this->m_X_s;
+    this->m_X_s = new char[X_s_val.size() + 1];
+    std::strcpy(this->m_X_s, X_s_val.c_str());
+
+    delete[] this->m_Y_s;
+    this->m_Y_s = new char[Y_s_val.size() + 1];
+    std::strcpy(this->m_Y_s, Y_s_val.c_str());
+
+    const std::string vba_value = UTILS::AkryptManager::getInstance().getVBAvalue();
+    const std::string vab_value = UTILS::AkryptManager::getInstance().getVABvalue();
+
+    delete[] this->m_v_se;
+    this->m_v_se = new char[vab_value.size() + 1];
+    std::strcpy(this->m_v_se, vab_value.c_str());
+
+    delete[] this->m_v_es;
+    this->m_v_es = new char[vba_value.size() + 1];
+    std::strcpy(this->m_v_es, vba_value.c_str());
+
+    spdlog::info("     X_s  = {}", this->m_X_s);
+    spdlog::info("     Y_s  = {}", this->m_Y_s);
+    spdlog::info("     v_se = {}", this->m_v_se);
+    spdlog::info("     v_es = {}", this->m_v_es);
+
+    ak_hmac_destroy((ak_hmac)streebog_ptr);
+
+    return true;
+}
+
+bool Subject::encryptXivalue()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to encrypt Xi_se. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    struct bckey kuznechik_key;
+    ak_uint8 iv[16] = {0};
+
+    auto vb_value = UTILS::AkryptManager::getInstance().getVBAvalue();
+
+    std::memcpy(iv, vb_value.data(), std::min(vb_value.size(), sizeof(iv) / sizeof(ak_uint8)));
+
+    if (ak_bckey_create_kuznechik(&kuznechik_key) != ak_error_ok)
+    {
+        spdlog::error(" Unable to create kuznechik bckey. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    if (ak_bckey_set_key(&kuznechik_key, this->m_X_s, 32) != ak_error_ok)
+    {
+        spdlog::error(" Unable to set kuznechik key. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    delete[] this->m_R_s_text;
+    this->m_R_s_text = new ak_uint64[sizeof(this->m_Xi_se_key) / sizeof(ak_uint64)];
+
+    if (ak_bckey_ctr(&kuznechik_key, this->m_Xi_se_key, this->m_R_s_text, sizeof(this->m_Xi_se_key) / sizeof(ak_uint64), iv, sizeof(iv) / sizeof(ak_uint8)) != ak_error_ok)
+    {
+        spdlog::error(" Unable to encrypt Xi_se. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} Xi_se enctypted:", this->m_subject_name);
+    spdlog::info("     Xi_se = {}", ak_mpzn_to_hexstr(this->m_Xi_se_key, ak_mpzn256_size));
+    spdlog::info("     R_s   = {}", ak_mpzn_to_hexstr(this->m_R_s_text, ak_mpzn256_size));
+
+    return true;
+}
+
+bool Subject::decryptXivalue()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to decrypt Xi_se. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    struct bckey kuznechik_key;
+    ak_uint8 iv[16] = {0};
+
+    auto vb_value = UTILS::AkryptManager::getInstance().getVBAvalue();
+
+    std::memcpy(iv, vb_value.data(), std::min(vb_value.size(), sizeof(iv) / sizeof(ak_uint8)));
+
+    if (ak_bckey_create_kuznechik(&kuznechik_key) != ak_error_ok)
+    {
+        spdlog::error(" Unable to create kuznechik bckey. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    if (ak_bckey_set_key(&kuznechik_key, this->m_X_s, 32) != ak_error_ok)
+    {
+        spdlog::error(" Unable to set kuznechik key. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    if (m_R_e_text == nullptr)
+    {
+        spdlog::error(" R_e is not provided. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    delete[] this->m_P_s_text;
+    this->m_P_s_text = new ak_uint64[32];
+    //this->m_P_s_text = new ak_uint64[sizeof(this->m_R_e_text) / sizeof(ak_uint64)];
+
+    //if (ak_bckey_ctr(&kuznechik_key, this->m_R_e_text, this->m_P_s_text, sizeof(this->m_R_e_text) / sizeof(ak_uint64), iv, sizeof(iv) / sizeof(ak_uint8)) != ak_error_ok)
+    if (ak_bckey_ctr(&kuznechik_key, this->m_R_e_text, this->m_P_s_text, 32, iv, sizeof(iv) / sizeof(ak_uint8)) != ak_error_ok)
+    {
+        spdlog::error(" Unable to decrypt Xi_se. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} Xi_se dectypted:", this->m_subject_name);
+    spdlog::info("     P_s = {}", ak_mpzn_to_hexstr(this->m_P_s_text, ak_mpzn256_size));
+    spdlog::info("     R_e = {}", ak_mpzn_to_hexstr(this->m_R_e_text, ak_mpzn256_size));
+
+    return true;
+}
+
+bool Subject::generateKkey()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate K key. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    ak_oid streebog_oid;
+    ak_pointer streebog_ptr;
+
+    streebog_oid = ak_oid_find_by_name("hmac-streebog512");
+    streebog_ptr = ak_oid_new_object(streebog_oid);
+
+    ak_uint8 buffer[64];
+    std::memset(buffer, 0, sizeof(buffer) / sizeof(ak_uint8));
+
+    const std::string password = UTILS::AkryptHelper::makePointsToString(this->m_Q_se_point, ak_mpzn256_size);
+    const std::string hash = UTILS::AkryptManager::getInstance().getHMACSeed();
+
+    ak_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)password.c_str(), password.size(), (void*)hash.c_str(), hash.size());
+
+    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H2_s, std::strlen(this->m_H2_s), buffer, sizeof(buffer) / sizeof(ak_uint8));
+
+    std::string k_key_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size((ak_hmac)streebog_ptr), ak_false);
+
+    spdlog::info(" {} K key generated:", this->m_subject_name);
+    spdlog::info("     {}", k_key_result);
+
+    if (sizeof(buffer) % sizeof(ak_uint64) != 0)
+    {
+        spdlog::error(" K key buffer size is not a multiple of ak_uint64 size for Subject {}.", this->m_subject_name);
+        ak_hmac_destroy((ak_hmac)streebog_ptr);
+        return false;
+
+    }
+
+    std::memcpy(this->m_K_se_key, buffer, sizeof(buffer) / sizeof(ak_uint8));
+
+    ak_hmac_destroy((ak_hmac)streebog_ptr);
+
+    return true;
+}
+
+bool Subject::validateMAC()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to validate MAC. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    if (this->m_T_s == nullptr || this->m_T_e == nullptr)
+    {
+        spdlog::error(" MAC validation failed, missing MAC for Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    if (std::strcmp(this->m_T_s, this->m_T_e) != 0)
+    {
+        spdlog::error(" MAC validation failed, MAC differ for Subject {}.", this->m_subject_name);
+        spdlog::error("     T_s = {}", this->m_T_s);
+        spdlog::error("     T_e = {}", this->m_T_e);
+        return false;
+    }
+
+    spdlog::info(" {} MAC validated.", this->m_subject_name);
+    spdlog::info("     T_s = {}", this->m_T_s);
+    spdlog::info("     T_e = {}", this->m_T_e);
+
+    return true;
+}
+
 // ======================== Class Setters ========================
+
+void Subject::setR_s_text(const ak_uint64* r_s_text, ak_uint32 r_s_text_len)
+{
+    delete[] this->m_R_s_text;
+    this->m_R_s_text = new ak_uint64[r_s_text_len];
+    std::copy(r_s_text, r_s_text + r_s_text_len, this->m_R_s_text);
+
+    spdlog::info(" {} recieved R_s text:", this->m_subject_name);
+    spdlog::info("     R_s   = {}", ak_mpzn_to_hexstr(this->m_R_s_text, ak_mpzn256_size));
+}
+
+void Subject::setR_e_text(const ak_uint64* r_e_text, ak_uint32 r_e_text_len)
+{
+    delete[] this->m_R_e_text;
+    this->m_R_e_text = new ak_uint64[r_e_text_len];
+    std::copy(r_e_text, r_e_text + r_e_text_len, this->m_R_e_text);
+
+    spdlog::info(" {} recieved R_e text:", this->m_subject_name);
+    spdlog::info("     R_e   = {}", ak_mpzn_to_hexstr(this->m_R_e_text, ak_mpzn256_size));
+}
 
 void Subject::setE_s_point(const wpoint& E_s_point)
 {
@@ -565,7 +1158,7 @@ void Subject::setN_ca_num(const ak_uint8* ca_serialnum, ak_uint32 ca_serialnum_l
     }
     else
     {
-        std::memset(this->m_ca_serialnum, 0, sizeof(this->m_ca_serialnum));
+        std::memset(this->m_ca_serialnum, 0, sizeof(this->m_ca_serialnum) / sizeof(ak_uint8));
     }
 }
 
@@ -580,7 +1173,7 @@ void Subject::setN_s_num(const ak_uint8* s_serialnum, ak_uint32 s_serialnum_len)
     }
     else
     {
-        std::memset(this->m_s_serialnum, 0, sizeof(this->m_s_serialnum));
+        std::memset(this->m_s_serialnum, 0, sizeof(this->m_s_serialnum) / sizeof(ak_uint8));
     }
 }
 
@@ -595,7 +1188,7 @@ void Subject::setN_e_num(const ak_uint8* e_serialnum, ak_uint32 e_serialnum_len)
     }
     else
     {
-        std::memset(this->m_e_serialnum, 0, sizeof(this->m_e_serialnum));
+        std::memset(this->m_e_serialnum, 0, sizeof(this->m_e_serialnum) / sizeof(ak_uint8));
     }
 }
 
@@ -625,12 +1218,34 @@ void Subject::set_e_e_id(wcurve_id_t e_wc_id)
 
 void Subject::setCert_s(UTILS::AkryptCertificate cert_s)
 {
+    spdlog::info(" {} recieved self sertificate", this->m_subject_name);
+
     this->m_cert_s = cert_s;
 }
 
 void Subject::setCert_e(UTILS::AkryptCertificate cert_e)
 {
+    spdlog::info(" {} recieved extern sertificate", this->m_subject_name);
     this->m_cert_e = cert_e;
+}
+
+void Subject::setTE(const char* t_e)
+{
+    delete[] this->m_T_e;
+    this->m_T_e = nullptr;
+
+    if (t_e == nullptr)
+    {
+        spdlog::error(" {} recieved empty T", this->m_subject_name);
+        return;
+    }
+
+    size_t len = std::strlen(t_e) + 1;
+    this->m_T_e = new char[len];
+
+    std::strcpy(this->m_T_e, t_e);
+
+    spdlog::info(" {} recieved extern T: {}", this->m_subject_name, this->m_T_e);
 }
 
 // ======================== Class Getters ========================
@@ -653,6 +1268,21 @@ const ak_uint64* Subject::getXi_se_key() const
 const ak_uint64* Subject::getXi_es_key() const
 {
     return this->m_Xi_es_key;
+}
+
+const ak_uint64* Subject::getR_s_text() const
+{
+    return this->m_R_s_text;
+}
+
+const ak_uint64* Subject::getR_e_text() const
+{
+    return this->m_R_e_text;
+}
+
+const ak_uint64* Subject::getK_s_key() const
+{
+    return this->m_K_se_key;
 }
 
 const wpoint Subject::getE_s_point() const
@@ -723,6 +1353,37 @@ wcurve_id_t Subject::get_e_s_id() const
 wcurve_id_t Subject::get_e_e_id() const
 {
     return this->m_e_wc_id;
+}
+
+char* Subject::getIdS() const
+{
+    if (!this->m_id_s)
+    {
+        return nullptr;
+    }
+
+    size_t len = std::strlen(this->m_id_s) + 1;
+    char* copy = new char[len];
+    std::strcpy(copy, this->m_id_s);
+    return copy;
+}
+
+char* Subject::getIdE() const
+{
+    if (!this->m_id_e)
+    {
+        return nullptr;
+    }
+
+    size_t len = std::strlen(this->m_id_e) + 1;
+    char* copy = new char[len];
+    std::strcpy(copy, this->m_id_e);
+    return copy;
+}
+
+char* Subject::getTS() const
+{
+    return this->m_T_s;
 }
 
 UTILS::AkryptCertificate Subject::getCert_s()

@@ -56,6 +56,89 @@ bool AkryptManager::isInitialized() const
     return this->m_ak_initialized;
 }
 
+void AkryptManager::setHMACSeed(const std::string& seed)
+{
+    this->m_HMAC_seed = seed;
+}
+
+std::string AkryptManager::getHMACSeed()
+{
+    return this->m_HMAC_seed;
+}
+
+
+std::string AkryptManager::getVBAvalue()
+{
+    return this->m_vba_value;
+}
+
+std::string AkryptManager::getVABvalue()
+{
+    return this->m_vab_value;
+}
+
+std::string AkryptManager::getUBAvalue()
+{
+    return this->m_uba_value;
+}
+
+std::string AkryptManager::getUABvalue()
+{
+    return this->m_uab_value;
+}
+
+void AkryptManager::setVBAvalue(std::string& value)
+{
+    if (value.size() != 16)
+    {
+        spdlog::error(" Invalid uv parameter size provided.");
+        return;
+    }
+
+    this->m_vba_value = value;
+}
+
+void AkryptManager::setVABvalue(std::string& value)
+{
+    if (value.size() != 16)
+    {
+        spdlog::error(" Invalid uv parameter size provided.");
+        return;
+    }
+
+    this->m_vab_value = value;
+}
+
+void AkryptManager::setUBAvalue(std::string& value)
+{
+    if (value.size() != 16)
+    {
+        spdlog::error(" Invalid uv parameter size provided.");
+        return;
+    }
+
+    this->m_uba_value = value;
+}
+
+void AkryptManager::setUABvalue(std::string& value)
+{
+    if (value.size() != 16)
+    {
+        spdlog::error(" Invalid uv parameter size provided.");
+        return;
+    }
+
+    this->m_uab_value = value;
+}
+
+void AkryptManager::setUVvalue(std::string& value)
+{
+    this->setVBAvalue(value);
+    this->setVABvalue(value);
+    this->setUBAvalue(value);
+    this->setUABvalue(value);
+}
+
 AkryptManager::AkryptManager() :
     m_ak_audit(nullptr), m_ak_initialized(false), m_usage_count(0)
 {

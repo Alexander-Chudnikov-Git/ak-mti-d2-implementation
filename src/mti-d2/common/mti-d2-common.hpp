@@ -33,7 +33,6 @@
  */
 #define CERT_ID_CN "common-name"
 
-
 namespace MTI_D2
 {
 /**
@@ -66,9 +65,9 @@ enum CERT_V : ak_uint32
  */
 enum CERT_T : time_t
 {
-    DAY   = 24 * 60 * 60, ///< 86400 секунд
-    MONTH = DAY * 30, ///< 2592000 секунд
-    YEAR  = MONTH * 12 ///< 31536000 секунд
+    DAY   = 24 * 60 * 60,
+    MONTH = DAY * 30,
+    YEAR  = MONTH * 12
 };
 
 }

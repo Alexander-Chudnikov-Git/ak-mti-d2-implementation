@@ -1,20 +1,3 @@
-/**
- * @file       <akrypt-certificate.hpp>
- * @brief      Заголовочный файл для класса AkryptCertificate
- *
- *             Класс для работы с цифровыми сертификатами X.509.
- *
- * @author     CHOO_IS_FOX (@Alexander-Chudnikov-Git)
- * @date       20.01.2025
- * @version    0.0.1
- *
- * @bug        На данный момент баги отсутствуют.
- *
- * @copyright  А. А. Чудников, Абдуллабеков Т. М, Хохлов E. A. 2025
- *
- * @license    Данный проект находится под публичной лицензией GNUv3.
- *
- */
 #ifndef AKRYPT_CERTIFICATE_HPP
 #define AKRYPT_CERTIFICATE_HPP
 
@@ -25,17 +8,10 @@
 
 namespace UTILS
 {
-/**
- * @brief      Класс для работы с сертификатами libakrypt
- *
- *             Обеспечивает безопасное управление памятью и проверку 
- *             основных свойств сертификатов. Поддерживает копирование, 
- *             перемещение и проверку статуса CA.
- */
 class AkryptCertificate
 {
 public:
-     /**
+    /**
      * @brief      Конструктор по умолчанию
      */
     AkryptCertificate();

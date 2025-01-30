@@ -40,7 +40,6 @@ namespace UTILS
 class AkryptHelper
 {
 public:
-
     /**
      * @brief      Загрузка сертификата из файла
      * 
@@ -95,6 +94,16 @@ public:
      * @note       Дебаг функция
      */
     static void logWPoint(struct wpoint& wpoint, const size_t size = ak_mpzn512_size);
+
+    /**
+     * @brief      Функция которая превращает точку в строку
+     * 
+     * @param[in]  wpoint  Точка кривой
+     * @param[in]  size    Размер данных для вывода
+     * 
+     * @return     Возвращает строку которая получилась
+     */
+    static std::string makePointsToString(struct wpoint& wpoint, const size_t size);
 };
 }
 
