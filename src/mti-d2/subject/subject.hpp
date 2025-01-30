@@ -51,9 +51,18 @@ public:
     bool verifyPDiff();
     bool getIdentifierS();
     bool getIdentifierE();
-    bool generateHValue();
+    bool generateH1ValueS();
+    bool generateH1ValueE();
+    bool generateH2ValueS();
+    bool generateH2ValueE();
     bool generateHMAC();
+    bool generateKkey();
     bool encryptXivalue();
+    bool decryptXivalue();
+    bool generateMAConA();
+    bool generateMAConB();
+    bool checkMAConB();
+    bool checkMAConA();
 
 public:
     void setR_s_text(const ak_uint64* r_s_text, ak_uint32 r_s_text_len);
@@ -82,6 +91,7 @@ public:
     const ak_uint64* getXi_es_key() const;
     const ak_uint64* getR_s_text() const;
     const ak_uint64* getR_e_text() const;
+    const ak_uint64* getK_s_key() const;
     const wpoint getE_s_point() const;
     const wpoint getE_e_point() const;
     const wpoint getQ_s_point() const;
@@ -91,6 +101,10 @@ public:
     const ak_uint8* getN_ca_num() const;
     const ak_uint8* getN_s_num() const;
     const ak_uint8* getN_e_num() const;
+    
+    ak_uint8* getMAC_on_B(); // get T_b
+    ak_uint8* getMAC_on_A(); // get T_a
+
     ak_uint32 getN_ca_num_len() const;
     ak_uint32 getN_s_num_len() const;
     ak_uint32 getN_e_num_len() const;
@@ -98,6 +112,9 @@ public:
     bool getReq_e() const;
     wcurve_id_t get_e_s_id() const;
     wcurve_id_t get_e_e_id() const;
+
+    char* getIdS() const;
+    char* getIdE() const;
 
     UTILS::AkryptCertificate getCert_s();
     UTILS::AkryptCertificate getCert_e();
@@ -115,7 +132,8 @@ private:
     char* m_id_s = {nullptr};
     char* m_id_e = {nullptr};
 
-    char* m_H_s = {nullptr};
+    char* m_H1_s = {nullptr};
+    char* m_H2_s = {nullptr};
 
     char* m_X_s = {nullptr};
     char* m_Y_s = {nullptr};
@@ -129,8 +147,12 @@ private:
     ak_uint64 m_Xi_se_key[32] = {0}; ///< ξ_ab
     ak_uint64 m_Xi_es_key[32] = {0}; ///< ξ_ba
 
+    ak_uint64 m_K_se_key[32] = {0}; ///< K_ab
+
     ak_uint64* m_R_s_text = {nullptr}; ///< R_a
     ak_uint64* m_R_e_text = {nullptr}; ///< R_b
+
+    ak_uint64* m_P_s_text = {nullptr}; ///< P_a
 
     wpoint m_E_s_point = {}; ///< E_a
     wpoint m_E_e_point = {}; ///< E_b
@@ -147,6 +169,9 @@ private:
     ak_uint8 m_s_serialnum[32] = {0}; ///< N_a
     ak_uint8 m_e_serialnum[32] = {0}; ///< N_b
 
+    ak_uint8 m_T_a_mac[32] = {0}; ///< T_a
+    ak_uint8 m_T_b_mac[32] = {0}; ///< T_b
+ 
     ak_uint32 m_ca_serialnum_length = {0};
     ak_uint32 m_s_serialnum_length = {0};
     ak_uint32 m_e_serialnum_length = {0};

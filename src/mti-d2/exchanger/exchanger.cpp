@@ -188,7 +188,6 @@ bool SubjectCertificateA::execute([[maybe_unused]] Subject& subject_a, [[maybe_u
 
 bool SubjectCertificateA::exit([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b)
 {
-
     if (!subject_b.generateRandomXiSEScalar())
     {
         return false;
@@ -204,7 +203,7 @@ bool SubjectCertificateA::exit([[maybe_unused]] Subject& subject_a, [[maybe_unus
         return false;
     }
 
-    if (!subject_b.generateHValue())
+    if (!subject_b.generateH1ValueE())
     {
         return false;
     }
@@ -276,26 +275,81 @@ bool IdentifySubjectB::exit([[maybe_unused]] Subject& subject_a, [[maybe_unused]
 
 // ================ SubjectAuthenticateA ================
 
-bool SubjectAuthenticateA::enter([[maybe_unused]] Subject& subject_a, [[maybe_unused]]  Subject& subject_b) {
+bool SubjectAuthenticateA::enter([[maybe_unused]] Subject& subject_a, [[maybe_unused]]  Subject& subject_b)
+{
     spdlog::info("-----------------------------------------------------------");
 
-    // TODO: Implement
+    if (!subject_a.verifyExternCa())
+    {
+        return false;
+    }
+
+    if (!subject_a.checkExternEPoint())
+    {
+        return false;
+    }
+
+    auto old_id = subject_a.getIdE();
+
+    if (!subject_a.getIdentifierE())
+    {
+        return false;
+    }
+
+    auto new_id = subject_a.getIdE();
+
+    if (std::strcmp(old_id, new_id) != 0)
+    {
+        delete[] old_id;
+        delete[] new_id;
+        spdlog::error(" Certificate B id differ fron initial one.");
+        return false;
+    }
+    else
+    {
+        delete[] old_id;
+        delete[] new_id;
+        spdlog::info(" Certificate B id validated.");
+    }
 
     return true;
 }
 
-bool SubjectAuthenticateA::execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) {
-    spdlog::info("-----------------------------------------------------------");
+bool SubjectAuthenticateA::execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b)
+{
+    spdlog::info("                                                           ");
 
-    // TODO: Implement
+    if (!subject_a.extractExternPublicKey())
+    {
+        return false;
+    }
+
+    if (!subject_a.verifyXDiff())
+    {
+        return false;
+    }
+
+    spdlog::info("                                                           ");
 
     return true;
 }
 
-bool SubjectAuthenticateA::exit([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) {
-    spdlog::info("-----------------------------------------------------------");
+bool SubjectAuthenticateA::exit([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b)
+{
+    if (!subject_a.calculateСPoint())
+    {
+        return false;
+    }
 
-    // TODO: Implement
+    if (!subject_a.verifyPDiff())
+    {
+        return false;
+    }
+
+    if (!subject_a.calculateQPoint())
+    {
+        return false;
+    }
 
     spdlog::info("-----------------------------------------------------------");
     return true;
@@ -303,27 +357,129 @@ bool SubjectAuthenticateA::exit([[maybe_unused]] Subject& subject_a, [[maybe_unu
 
 // ================ SubjectAuthenticateB ================
 
-bool SubjectAuthenticateB::enter([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) {
+bool SubjectAuthenticateB::enter([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b)
+{
     spdlog::info("-----------------------------------------------------------");
 
-    // TODO: Implement
+    if (!subject_a.generateRandomXiSEScalar())
+    {
+        return false;
+    }
+
+    if (!subject_a.getIdentifierS())
+    {
+        return false;
+    }
+
+    if (!subject_a.getIdentifierE())
+    {
+        return false;
+    }
+
+    if (!subject_a.generateH1ValueS())
+    {
+        return false;
+    }
+
+    if (!subject_a.generateHMAC())
+    {
+        return false;
+    }
+
+    if (!subject_a.encryptXivalue())
+    {
+        return false;
+    }
+
+    if (!subject_a.decryptXivalue())
+    {
+        return false;
+    }
+    
+    if (!subject_a.generateMAConA())
+    {
+        return false;
+    }
 
     return true;
 }
 
-bool SubjectAuthenticateB::execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) {
-    spdlog::info("-----------------------------------------------------------");
+bool SubjectAuthenticateB::execute([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b)
+{
+    spdlog::info("                                                           ");
 
-    // TODO: Implement
+    // transfer T_a
+    ak_uint8* mac_T_a = subject_a.getMAC_on_A();
+
+    auto r_a_text = subject_a.getR_s_text();
+    subject_b.setR_e_text(r_a_text, sizeof(r_a_text));
+
+    if (!subject_b.decryptXivalue())
+    {
+        return false;
+    }
+
+    // check mac
+    if (!subject_b.checkMAConB())
+    {
+        return false;
+    }
+    
+    if (!subject_b.generateMAConB())
+    {
+        return false;
+    }
+
+    // transfer T_b [UPD: Why it needed to be here?]
+    ak_uint8* mac_T_b = subject_a.getMAC_on_B();
+
+    spdlog::info("                                                           ");
 
     return true;
 }
 
-bool SubjectAuthenticateB::exit([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b) {
-    spdlog::info("-----------------------------------------------------------");
+bool SubjectAuthenticateB::exit([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b)
+{
 
+    // check mac
+    if (!subject_a.checkMAConA())
+    {
+        return false;
+    }
 
-    // TODO: Implement
+    if (!subject_a.generateH2ValueS())
+    {
+        return false;
+    }
+
+    if (!subject_b.generateH2ValueE())
+    {
+        return false;
+    }
+
+    if (!subject_a.generateKkey())
+    {
+        return false;
+    }
+
+    if (!subject_b.generateKkey())
+    {
+        return false;
+    }
+
+    auto exchange_a = subject_a.getK_s_key();
+    auto exchange_b = subject_b.getK_s_key();
+
+    for (int i = 0; i < 32; i++)
+    {
+        if (exchange_a[i] != exchange_b[i])
+        {
+            spdlog::error(" Exchanged keys are different, exchange failed.");
+            return false;
+        }
+    }
+
+    spdlog::info(" Exchanged keys match, exchange success.");
 
     spdlog::info("-----------------------------------------------------------");
     return true;
@@ -349,8 +505,8 @@ void Exchanger::init(Subject subject_a, Subject subject_b)
     this->addStep("SubjectCertificateA", std::make_unique<SubjectCertificateA>());
 
     this->addStep("IdentifySubjectB", std::make_unique<IdentifySubjectB>());
-    //this->addStep("SubjectAuthenticateA", std::make_unique<SubjectAuthenticateA>());
-    //this->addStep("SubjectAuthenticateB", std::make_unique<SubjectAuthenticateB>());
+    this->addStep("SubjectAuthenticateA", std::make_unique<SubjectAuthenticateA>());
+    this->addStep("SubjectAuthenticateB", std::make_unique<SubjectAuthenticateB>());
 
     this->reset();
 

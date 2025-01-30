@@ -47,10 +47,10 @@ Subject::~Subject()
         this->m_id_e = nullptr;
     }
 
-    if (this->m_H_s != nullptr)
+    if (this->m_H1_s != nullptr)
     {
-        delete[] this->m_H_s;
-        this->m_H_s = nullptr;
+        delete[] this->m_H1_s;
+        this->m_H1_s = nullptr;
     }
 
     if (this->m_X_s != nullptr)
@@ -123,13 +123,17 @@ void Subject::initSubject(UTILS::AkryptCertificate cert_ca,
         this->m_req_s = true;
     }
 
-    /*this->m_id_e = id_e;*/
 
     spdlog::info(" Subject '{}' initialized.", this->m_subject_name);
 
     this->initLibAkrypt();
 
     this->m_initialized = true;
+
+    // if id_e is {}
+    this->getIdentifierE();
+    // else
+    /*this->m_id_e = id_e;*/
 
     // DEBUG
     /*
@@ -298,8 +302,8 @@ bool Subject::calculateQPoint()
     wpoint temp_point_1 = {};
     wpoint temp_point_2 = {};
 
-    ak_wpoint_pow(&temp_point_1, &this->m_С_s_point, this->m_Xi_e_key, sizeof(this->m_Xi_e_key) / sizeof(ak_uint64), this->m_cert_s.get()->vkey.wc);
-    ak_wpoint_pow(&temp_point_2, &this->m_С_s_point, reinterpret_cast<ak_uint64 *>(this->m_d_s_key.get()->key), (this->m_d_s_key.get()->key_size / 4), this->m_cert_s.get()->vkey.wc); ///< Yeah, looks painfull
+    ak_wpoint_pow(&temp_point_1, &this->m_С_e_point, this->m_Xi_s_key, sizeof(this->m_Xi_s_key) / sizeof(ak_uint64), this->m_cert_s.get()->vkey.wc);
+    ak_wpoint_pow(&temp_point_2, &this->m_С_e_point, reinterpret_cast<ak_uint64 *>(this->m_d_s_key.get()->key), (this->m_d_s_key.get()->key_size / 4), this->m_cert_s.get()->vkey.wc); ///< Yeah, looks painfull
     ak_wpoint_set_wpoint(&this->m_Q_se_point, &temp_point_1, this->m_cert_s.get()->vkey.wc);
     ak_wpoint_add(&this->m_Q_se_point, &temp_point_2, this->m_cert_s.get()->vkey.wc);
 
@@ -626,7 +630,7 @@ bool Subject::getIdentifierE()
     return true;
 }
 
-bool Subject::generateHValue()
+bool Subject::generateH1ValueS()
 {
     if (!this->m_initialized)
     {
@@ -642,8 +646,8 @@ bool Subject::generateHValue()
     ss << this->m_id_s << E_s_string << this->m_id_e << E_e_string;
 
     std::string temp = ss.str();
-    this->m_H_s = new char[temp.size() + 1];
-    std::strcpy(this->m_H_s, temp.c_str());
+    this->m_H1_s = new char[temp.size() + 1];
+    std::strcpy(this->m_H1_s, temp.c_str());
 
     if (this->m_id_e == nullptr)
     {
@@ -652,6 +656,99 @@ bool Subject::generateHValue()
     }
 
     spdlog::info(" {} H value generated:", this->m_subject_name);
+    spdlog::info("     {}", ss.str());
+
+    return true;
+}
+
+bool Subject::generateH1ValueE()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate H value. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    const std::string E_s_string = UTILS::AkryptHelper::makePointsToString(this->m_E_s_point, ak_mpzn256_size);
+    const std::string E_e_string = UTILS::AkryptHelper::makePointsToString(this->m_E_e_point, ak_mpzn256_size);
+
+    std::stringstream ss;
+
+    ss << this->m_id_e << E_e_string << this->m_id_s << E_s_string ;
+
+    std::string temp = ss.str();
+    this->m_H1_s = new char[temp.size() + 1];
+    std::strcpy(this->m_H1_s, temp.c_str());
+
+    if (this->m_id_e == nullptr)
+    {
+        spdlog::error(" Unable to create H value. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} H value generated:", this->m_subject_name);
+    spdlog::info("     {}", ss.str());
+
+    return true;
+}
+
+bool Subject::generateH2ValueS()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate H2 value. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    const std::string Xi_s_string  = ak_mpzn_to_hexstr(this->m_Xi_se_key, ak_mpzn256_size);
+    const std::string P_s_string   = ak_mpzn_to_hexstr(this->m_P_s_text, ak_mpzn256_size);
+
+    std::stringstream ss;
+
+    ss << this->m_H1_s << Xi_s_string << P_s_string;
+
+    std::string temp = ss.str();
+    this->m_H2_s = new char[temp.size() + 1];
+    std::strcpy(this->m_H2_s, temp.c_str());
+
+    if (this->m_id_e == nullptr)
+    {
+        spdlog::error(" Unable to create H2 value. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} H2 value generated:", this->m_subject_name);
+    spdlog::info("     {}", ss.str());
+
+    return true;
+}
+
+bool Subject::generateH2ValueE()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate H2 value. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    const std::string Xi_e_string  = ak_mpzn_to_hexstr(this->m_Xi_se_key, ak_mpzn256_size);
+    const std::string P_s_string   = ak_mpzn_to_hexstr(this->m_P_s_text, ak_mpzn256_size);
+
+    std::stringstream ss;
+
+    ss << this->m_H1_s << P_s_string << Xi_e_string;
+
+    std::string temp = ss.str();
+    this->m_H2_s = new char[temp.size() + 1];
+    std::strcpy(this->m_H2_s, temp.c_str());
+
+    if (this->m_id_e == nullptr)
+    {
+        spdlog::error(" Unable to create H2 value. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} H2 value generated:", this->m_subject_name);
     spdlog::info("     {}", ss.str());
 
     return true;
@@ -671,16 +768,16 @@ bool Subject::generateHMAC()
     streebog_oid = ak_oid_find_by_name("hmac-streebog512");
     streebog_ptr = ak_oid_new_object(streebog_oid);
 
-    ak_uint8 buffer[128];
+    ak_uint8 buffer[64];
+    std::memset(buffer, 0, sizeof(buffer) / sizeof(ak_uint8));
 
     const std::string password = UTILS::AkryptHelper::makePointsToString(this->m_Q_se_point, ak_mpzn256_size);
     const std::string hash = UTILS::AkryptManager::getInstance().getHMACSeed();
 
     ak_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)password.c_str(), password.size(), (void*)hash.c_str(), hash.size());
+    //k_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)buffer, 128, (void*)hash.c_str(), hash.size()); // DEBUG
 
-    std::memset(buffer, 0, sizeof(buffer) / sizeof(ak_uint8));
-
-    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H_s, std::strlen(this->m_H_s), buffer, sizeof(buffer) / sizeof(ak_uint8));
+    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H1_s, std::strlen(this->m_H1_s), buffer, sizeof(buffer) / sizeof(ak_uint8));
 
     std::string hmac_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size((ak_hmac)streebog_ptr), ak_false);
 
@@ -714,7 +811,172 @@ bool Subject::generateHMAC()
     spdlog::info("     v_se = {}", this->m_v_se);
     spdlog::info("     v_es = {}", this->m_v_es);
 
+    ak_hmac_destroy((ak_hmac)streebog_ptr);
+
     return true;
+}
+
+bool Subject::Subject::generateMAConA()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate MAC Xi_se. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    struct bckey mac_key;
+
+    int error = ak_error_ok;
+
+    error = ak_bckey_create_kuznechik(&mac_key);
+    if (error != ak_error_ok)
+    {
+        spdlog::error(" Failed to make MAC. Oid create error! {} | {}", error, this->m_subject_name);
+        return false;
+    }
+
+    // strange cuz in m_H2_s we take this->m_H1_s as first not m_id_s
+    // see that shit: (not working idk, but there is my opinion...)
+    // ==============
+    /*spdlog::error(" Step 1!");
+    std::string Xi_e_string  = ak_mpzn_to_hexstr(this->m_Xi_se_key, ak_mpzn256_size);
+    std::string P_s_string   = ak_mpzn_to_hexstr(this->m_P_s_text, ak_mpzn256_size);
+    spdlog::error(" Step 2!");
+
+    std::stringstream ss;
+
+    //Cortage from ID_a || P_a || Xi_ab = m_id_s + m_P_s_text + m_Xi_se_key
+    ss << this->m_H1_s << P_s_string << Xi_e_string; // here wtf, not like in file
+
+
+    char* dummy = {nullptr};
+
+    std::string temp = ss.str();
+    dummy = new char[temp.size() + 1];
+    std::strcpy(dummy, temp.c_str());
+
+    spdlog::error(" Step 3!");
+    */
+    // end =========
+
+    // maybe not working fine as planned. this->m_H2_s doesnt work. due to info from net mac uses secret self key
+    // all stuff or not working (unknown errors like -2 -4 -7) or not compile...
+    // took CA to ez verify        // here is why MAC's are same (math problem)
+    error = ak_bckey_set_key(&mac_key, this->m_ca_serialnum, sizeof(this->m_ca_serialnum)); // Cortage from? ID_a || P_a || Xi_ab = m_H1_s + m_P_s_text + m_Xi_se_key
+    if (error != ak_error_ok)
+    {
+        spdlog::error(" Failed to set key in MAC. {} | {}", error, this->m_subject_name);
+        return false;
+    }
+
+    // here m_T_a_mac as T_a in step 14.
+                        //struct // data to chiper //sz //imito //bkey sz
+    error = ak_bckey_cmac(&mac_key, this->m_Y_s, sizeof(this->m_Y_s), m_T_a_mac, mac_key.bsize);
+    if (error  != ak_error_ok)
+    {
+        spdlog::error(" Failed to make MAC. {} | {}", error, this->m_subject_name);
+        return false;
+    } 
+
+    // set to info when checked mac
+    spdlog::error(" Created MAC: {} | {}", ak_ptr_to_hexstr( m_T_a_mac, mac_key.bsize, ak_false ), this->m_subject_name);
+
+    return true;
+}
+
+bool Subject::generateMAConB()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate MAC Xi_se. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    struct bckey mac_key;
+
+    int error = ak_error_ok;
+
+    error = ak_bckey_create_kuznechik(&mac_key);
+    if (error != ak_error_ok)
+    {
+        spdlog::error(" Failed to make MAC. Oid create error! {} | {}", error, this->m_subject_name);
+        return false;
+    }
+
+    // problem see upper
+    // took CA to ez verify
+    error = ak_bckey_set_key(&mac_key, this->m_ca_serialnum, sizeof(this->m_ca_serialnum)); // Cortage from? ID_a || P_a || Xi_ab = m_H1_s + m_P_s_text + m_Xi_se_key
+    if (error != ak_error_ok)
+    {
+        spdlog::error(" Failed to set key in MAC. {} | {}", error, this->m_subject_name);
+        return false;
+    }
+
+    // here m_T_b_mac as T_b in step 14.
+                        //struct // data to chiper //sz //imito //bkey sz
+    error = ak_bckey_cmac(&mac_key, this->m_Y_s, sizeof(this->m_Y_s), m_T_b_mac, mac_key.bsize);
+    if (error  != ak_error_ok)
+    {
+        spdlog::error(" Failed to make MAC. {} | {}", error, this->m_subject_name);
+        return false;
+    } 
+
+    // set to info when checked mac
+    spdlog::error(" Created MAC: {} | {}", ak_ptr_to_hexstr( m_T_b_mac, mac_key.bsize, ak_false ), this->m_subject_name);
+
+    return true;
+}
+
+bool Subject::checkMAConB()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to Check MAC. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    // Not all stuff is in the code, sadly, or i missed smth
+    //m_X_s, m_id_s || m_Xi_es_key || m_P_e_text 
+
+    /*std::stringstream ss;
+
+    ss << this->m_id_s << m_Xi_es_key << m_P_e_text; 
+
+    std::string temp = ss.str();
+    this->m_H2_s = new char[temp.size() + 1];
+    std::strcpy(this->m_H2_s, temp.c_str());*/
+
+    return true;
+}
+
+bool Subject::checkMAConA()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to Check MAC. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    // m_Y_s, m_id_e || m_Xi_se_key || m_P_s_text
+
+    //std::stringstream ss;
+
+    //ss << this->m_id_e << this->m_Xi_se_key << this->m_P_s_text; 
+
+    //std::string temp = ss.str();
+    //char* computed_data = new char[temp.size() + 1];
+    //std::strcpy(this->m_H2_s, temp.c_str());
+    return true;
+}
+
+ak_uint8* Subject::getMAC_on_B()
+{
+    return m_T_b_mac;
+}
+
+ak_uint8* Subject::getMAC_on_A()
+{
+    return m_T_a_mac;
 }
 
 bool Subject::encryptXivalue()
@@ -756,6 +1018,101 @@ bool Subject::encryptXivalue()
     spdlog::info(" {} Xi_se enctypted:", this->m_subject_name);
     spdlog::info("     Xi_se = {}", ak_mpzn_to_hexstr(this->m_Xi_se_key, ak_mpzn256_size));
     spdlog::info("     R_s   = {}", ak_mpzn_to_hexstr(this->m_R_s_text, ak_mpzn256_size));
+
+    return true;
+}
+
+bool Subject::decryptXivalue()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to decrypt Xi_se. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    struct bckey kuznechik_key;
+    ak_uint8 iv[16] = {0};
+
+    auto vb_value = UTILS::AkryptManager::getInstance().getVBAvalue();
+
+    std::memcpy(iv, vb_value.data(), std::min(vb_value.size(), sizeof(iv) / sizeof(ak_uint8)));
+
+    if (ak_bckey_create_kuznechik(&kuznechik_key) != ak_error_ok)
+    {
+        spdlog::error(" Unable to create kuznechik bckey. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    if (ak_bckey_set_key(&kuznechik_key, this->m_X_s, 32) != ak_error_ok)
+    {
+        spdlog::error(" Unable to set kuznechik key. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    if (m_R_e_text == nullptr)
+    {
+        spdlog::error(" R_e is not provided. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    delete[] this->m_P_s_text;
+    this->m_P_s_text = new ak_uint64[32];
+    //this->m_P_s_text = new ak_uint64[sizeof(this->m_R_e_text) / sizeof(ak_uint64)];
+
+    //if (ak_bckey_ctr(&kuznechik_key, this->m_R_e_text, this->m_P_s_text, sizeof(this->m_R_e_text) / sizeof(ak_uint64), iv, sizeof(iv) / sizeof(ak_uint8)) != ak_error_ok)
+    if (ak_bckey_ctr(&kuznechik_key, this->m_R_e_text, this->m_P_s_text, 32, iv, sizeof(iv) / sizeof(ak_uint8)) != ak_error_ok)
+    {
+        spdlog::error(" Unable to decrypt Xi_se. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} Xi_se dectypted:", this->m_subject_name);
+    spdlog::info("     P_s = {}", ak_mpzn_to_hexstr(this->m_P_s_text, ak_mpzn256_size));
+    spdlog::info("     R_e = {}", ak_mpzn_to_hexstr(this->m_R_e_text, ak_mpzn256_size));
+
+    return true;
+}
+
+bool Subject::generateKkey()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate K key. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    ak_oid streebog_oid;
+    ak_pointer streebog_ptr;
+
+    streebog_oid = ak_oid_find_by_name("hmac-streebog512");
+    streebog_ptr = ak_oid_new_object(streebog_oid);
+
+    ak_uint8 buffer[64];
+    std::memset(buffer, 0, sizeof(buffer) / sizeof(ak_uint8));
+
+    const std::string password = UTILS::AkryptHelper::makePointsToString(this->m_Q_se_point, ak_mpzn256_size);
+    const std::string hash = UTILS::AkryptManager::getInstance().getHMACSeed();
+
+    ak_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)password.c_str(), password.size(), (void*)hash.c_str(), hash.size());
+
+    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_H2_s, std::strlen(this->m_H2_s), buffer, sizeof(buffer) / sizeof(ak_uint8));
+
+    std::string k_key_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size((ak_hmac)streebog_ptr), ak_false);
+
+    spdlog::info(" {} K key generated:", this->m_subject_name);
+    spdlog::info("     {}", k_key_result);
+
+    if (sizeof(buffer) % sizeof(ak_uint64) != 0)
+    {
+        spdlog::error(" K key buffer size is not a multiple of ak_uint64 size for Subject {}.", this->m_subject_name);
+        ak_hmac_destroy((ak_hmac)streebog_ptr);
+        return false;
+
+    }
+
+    std::memcpy(this->m_K_se_key, buffer, sizeof(buffer) / sizeof(ak_uint8));
+
+    ak_hmac_destroy((ak_hmac)streebog_ptr);
 
     return true;
 }
@@ -939,6 +1296,11 @@ const ak_uint64* Subject::getR_e_text() const
     return this->m_R_e_text;
 }
 
+const ak_uint64* Subject::getK_s_key() const
+{
+    return this->m_K_se_key;
+}
+
 const wpoint Subject::getE_s_point() const
 {
     return this->m_E_s_point;
@@ -1007,6 +1369,32 @@ wcurve_id_t Subject::get_e_s_id() const
 wcurve_id_t Subject::get_e_e_id() const
 {
     return this->m_e_wc_id;
+}
+
+char* Subject::getIdS() const
+{
+    if (!m_id_s)
+    {
+        return nullptr;
+    }
+
+    size_t len = std::strlen(m_id_s) + 1;
+    char* copy = new char[len];
+    std::strcpy(copy, m_id_s);
+    return copy;
+}
+
+char* Subject::getIdE() const
+{
+    if (!m_id_e)
+    {
+        return nullptr;
+    }
+
+    size_t len = std::strlen(m_id_e) + 1;
+    char* copy = new char[len];
+    std::strcpy(copy, m_id_e);
+    return copy;
 }
 
 UTILS::AkryptCertificate Subject::getCert_s()
