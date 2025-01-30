@@ -850,7 +850,7 @@ bool Subject::generateMAC()
     std::string mac_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size((ak_hmac)streebog_ptr), ak_false);
 
     spdlog::info(" {} MAC generated:", this->m_subject_name);
-    spdlog::info("     {}", mac_result);
+    UTILS::AkryptHelper::logStringInBlocks(mac_result);
 
     delete[] this->m_T_s;
     this->m_T_s = new char[mac_result.size() + 1];
@@ -889,7 +889,7 @@ bool Subject::generateHMAC()
     std::string hmac_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size((ak_hmac)streebog_ptr), ak_false);
 
     spdlog::info(" {} HMAC generated:", this->m_subject_name);
-    spdlog::info("     {}", hmac_result);
+    UTILS::AkryptHelper::logStringInBlocks(hmac_result);
 
     std::string X_s_val = hmac_result.substr(0, 64);
     std::string Y_s_val = hmac_result.substr(64, 64);
@@ -913,6 +913,7 @@ bool Subject::generateHMAC()
     this->m_v_es = new char[vba_value.size() + 1];
     std::strcpy(this->m_v_es, vba_value.c_str());
 
+    spdlog::info(" {} HMAC splitted:", this->m_subject_name);
     spdlog::info("     X_s  = {}", this->m_X_s);
     spdlog::info("     Y_s  = {}", this->m_Y_s);
     spdlog::info("     v_se = {}", this->m_v_se);
@@ -1078,14 +1079,18 @@ bool Subject::validateMAC()
     if (std::strcmp(this->m_T_s, this->m_T_e) != 0)
     {
         spdlog::error("MAC validation failed, MAC differ for Subject {}.", this->m_subject_name);
-        spdlog::error("   T_s = {}", this->m_T_s);
-        spdlog::error("   T_e = {}", this->m_T_e);
+        spdlog::error("   T_s:");
+        UTILS::AkryptHelper::logStringInBlocks(std::string(this->m_T_s));
+        spdlog::error("   T_e:");
+        UTILS::AkryptHelper::logStringInBlocks(std::string(this->m_T_e));
         return false;
     }
 
     spdlog::info(" {} MAC validated.", this->m_subject_name);
-    spdlog::info("     T_s = {}", this->m_T_s);
-    spdlog::info("     T_e = {}", this->m_T_e);
+    spdlog::info("     T_s:");
+    UTILS::AkryptHelper::logStringInBlocks(std::string(this->m_T_s));
+    spdlog::info("     T_e:");
+    UTILS::AkryptHelper::logStringInBlocks(std::string(this->m_T_e));
 
     return true;
 }
@@ -1252,7 +1257,8 @@ void Subject::setTE(const char* t_e)
 
     std::strcpy(this->m_T_e, t_e);
 
-    spdlog::info(" {} recieved extern T: {}", this->m_subject_name, this->m_T_e);
+    spdlog::info(" {} recieved extern T:", this->m_subject_name, this->m_T_e);
+    UTILS::AkryptHelper::logStringInBlocks(std::string(this->m_T_e));
 }
 
 // ======================== Class Getters ========================

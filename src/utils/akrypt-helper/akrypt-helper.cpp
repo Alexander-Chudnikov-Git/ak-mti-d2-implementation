@@ -158,7 +158,8 @@ void AkryptHelper::logStringInBlocks(const std::string& input)
     {
         size_t start = i * BLOCK_SIZE;
         size_t length = std::min(BLOCK_SIZE, input.size() - start);
-        spdlog::info("     {}: {}", i + 1, input.substr(start, length));
+        std::string prefix = (i == totalBlocks - 1) ? "\\" : "|";
+        spdlog::info("     {} {}", prefix, input.substr(start, length));
     }
 }
 
