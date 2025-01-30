@@ -55,6 +55,10 @@ public:
     bool generateH1ValueE();
     bool generateH2ValueS();
     bool generateH2ValueE();
+    bool generateM1ValueS();
+    bool generateM1ValueE();
+    bool generateMAC();
+    bool validateMAC();
     bool generateHMAC();
     bool generateKkey();
     bool encryptXivalue();
@@ -79,6 +83,8 @@ public:
 
     void setCert_s(UTILS::AkryptCertificate cert_s);
     void setCert_e(UTILS::AkryptCertificate cert_e);
+
+    void setTE(const char* t_e);
 
 public:
     const ak_uint64* getXi_s_key() const;
@@ -107,6 +113,7 @@ public:
 
     char* getIdS() const;
     char* getIdE() const;
+    char* getTS()  const;
 
     UTILS::AkryptCertificate getCert_s();
     UTILS::AkryptCertificate getCert_e();
@@ -127,8 +134,13 @@ private:
     char* m_H1_s = {nullptr};
     char* m_H2_s = {nullptr};
 
+    char* m_M1_s = {nullptr};
+
     char* m_X_s = {nullptr};
     char* m_Y_s = {nullptr};
+
+    char* m_T_s = {nullptr};
+    char* m_T_e = {nullptr};
 
     char* m_v_se = {nullptr};
     char* m_v_es = {nullptr};
