@@ -395,7 +395,16 @@ bool SubjectAuthenticateB::enter([[maybe_unused]] Subject& subject_a, [[maybe_un
     {
         return false;
     }
-    // Add mac
+
+    if (!subject_a.generateM1ValueS())
+    {
+        return false;
+    }
+
+    if (!subject_a.generateMAC())
+    {
+        return false;
+    }
 
     return true;
 }
@@ -404,7 +413,8 @@ bool SubjectAuthenticateB::execute([[maybe_unused]] Subject& subject_a, [[maybe_
 {
     spdlog::info("                                                           ");
 
-    // transfer T_a
+    auto t_s = subject_a.getTS();
+    subject_b.setTE(t_s);
 
     auto r_a_text = subject_a.getR_s_text();
     subject_b.setR_e_text(r_a_text, sizeof(r_a_text));
@@ -414,10 +424,33 @@ bool SubjectAuthenticateB::execute([[maybe_unused]] Subject& subject_a, [[maybe_
         return false;
     }
 
-    // check mac
-    // mac
+    if (!subject_b.generateM1ValueE())
+    {
+        return false;
+    }
 
-    // transfer T_b
+    if (!subject_b.generateMAC())
+    {
+        return false;
+    }
+
+    if (!subject_b.validateMAC())
+    {
+        return false;
+    }
+
+    if (!subject_b.generateM1ValueS())
+    {
+        return false;
+    }
+
+    if (!subject_b.generateMAC())
+    {
+        return false;
+    }
+
+    t_s = subject_b.getTS();
+    subject_a.setTE(t_s);
 
     spdlog::info("                                                           ");
 
@@ -426,15 +459,27 @@ bool SubjectAuthenticateB::execute([[maybe_unused]] Subject& subject_a, [[maybe_
 
 bool SubjectAuthenticateB::exit([[maybe_unused]] Subject& subject_a, [[maybe_unused]] Subject& subject_b)
 {
-
-    // check mac
-
     if (!subject_a.generateH2ValueS())
     {
         return false;
     }
 
     if (!subject_b.generateH2ValueE())
+    {
+        return false;
+    }
+
+    if (!subject_a.generateM1ValueE())
+    {
+        return false;
+    }
+
+    if (!subject_a.generateMAC())
+    {
+        return false;
+    }
+    
+    if (!subject_a.validateMAC())
     {
         return false;
     }

@@ -754,6 +754,106 @@ bool Subject::generateH2ValueE()
     return true;
 }
 
+bool Subject::generateM1ValueS()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate M1 value. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    const std::string Xi_s_string  = ak_mpzn_to_hexstr(this->m_Xi_se_key, ak_mpzn256_size);
+    const std::string P_s_string   = ak_mpzn_to_hexstr(this->m_P_s_text, ak_mpzn256_size);
+
+    std::stringstream ss;
+
+    ss << this->m_id_s << P_s_string << Xi_s_string;
+
+    std::string temp = ss.str();
+    this->m_M1_s = new char[temp.size() + 1];
+    std::strcpy(this->m_M1_s, temp.c_str());
+
+    if (this->m_id_e == nullptr)
+    {
+        spdlog::error(" Unable to create M1 value. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} M1 value generated:", this->m_subject_name);
+    spdlog::info("     {}", ss.str());
+
+    return true;
+}
+
+bool Subject::generateM1ValueE()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate M1 value. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    const std::string Xi_e_string  = ak_mpzn_to_hexstr(this->m_Xi_se_key, ak_mpzn256_size);
+    const std::string P_s_string   = ak_mpzn_to_hexstr(this->m_P_s_text, ak_mpzn256_size);
+
+    std::stringstream ss;
+
+    ss << this->m_id_e << Xi_e_string << P_s_string;
+
+    std::string temp = ss.str();
+    this->m_M1_s = new char[temp.size() + 1];
+    std::strcpy(this->m_M1_s, temp.c_str());
+
+    if (this->m_id_e == nullptr)
+    {
+        spdlog::error(" Unable to create M1 value. Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    spdlog::info(" {} M1 value generated:", this->m_subject_name);
+    spdlog::info("     {}", ss.str());
+
+    return true;
+}
+
+bool Subject::generateMAC()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to generate MAC. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    ak_oid streebog_oid;
+    ak_pointer streebog_ptr;
+
+    streebog_oid = ak_oid_find_by_name("hmac-streebog512");
+    streebog_ptr = ak_oid_new_object(streebog_oid);
+
+    ak_uint8 buffer[64];
+    std::memset(buffer, 0, sizeof(buffer) / sizeof(ak_uint8));
+
+    const std::string hash = UTILS::AkryptManager::getInstance().getHMACSeed();
+
+    ak_hmac_set_key_from_password((ak_hmac)streebog_ptr, this->m_Y_s, sizeof(this->m_Y_s), (void*)hash.c_str(), hash.size());
+    //k_hmac_set_key_from_password((ak_hmac)streebog_ptr, (void*)buffer, 128, (void*)hash.c_str(), hash.size()); // DEBUG
+
+    ak_hmac_ptr((ak_hmac)streebog_ptr, this->m_M1_s, std::strlen(this->m_M1_s), buffer, sizeof(buffer) / sizeof(ak_uint8));
+
+    std::string mac_result = ak_ptr_to_hexstr(buffer, ak_hmac_get_tag_size((ak_hmac)streebog_ptr), ak_false);
+
+    spdlog::info(" {} MAC generated:", this->m_subject_name);
+    spdlog::info("     {}", mac_result);
+
+    delete[] this->m_T_s;
+    this->m_T_s = new char[mac_result.size() + 1];
+    std::strcpy(this->m_T_s, mac_result.c_str());
+
+    ak_hmac_destroy((ak_hmac)streebog_ptr);
+
+    return true;
+}
+
 bool Subject::generateHMAC()
 {
     if (!this->m_initialized)
@@ -954,6 +1054,35 @@ bool Subject::generateKkey()
     return true;
 }
 
+bool Subject::validateMAC()
+{
+    if (!this->m_initialized)
+    {
+        spdlog::error(" Unable to validate MAC. Subject {} is not initialized.", this->m_subject_name);
+        return false;
+    }
+
+    if (this->m_T_s == nullptr || this->m_T_e == nullptr)
+    {
+        spdlog::error(" MAC validation failed, missing MAC for Subject {}.", this->m_subject_name);
+        return false;
+    }
+
+    if (std::strcmp(this->m_T_s, this->m_T_e) != 0)
+    {
+        spdlog::error(" MAC validation failed, MAC differ for Subject {}.", this->m_subject_name);
+        spdlog::error("     T_s = {}", this->m_T_s);
+        spdlog::error("     T_e = {}", this->m_T_e);
+        return false;
+    }
+
+    spdlog::info(" {} MAC validated.", this->m_subject_name);
+    spdlog::info("     T_s = {}", this->m_T_s);
+    spdlog::info("     T_e = {}", this->m_T_e);
+
+    return true;
+}
+
 // ======================== Class Setters ========================
 
 void Subject::setR_s_text(const ak_uint64* r_s_text, ak_uint32 r_s_text_len)
@@ -1096,9 +1225,27 @@ void Subject::setCert_s(UTILS::AkryptCertificate cert_s)
 
 void Subject::setCert_e(UTILS::AkryptCertificate cert_e)
 {
-    spdlog::info(" {} recieved etern sertificate", this->m_subject_name);
-
+    spdlog::info(" {} recieved extern sertificate", this->m_subject_name);
     this->m_cert_e = cert_e;
+}
+
+void Subject::setTE(const char* t_e)
+{
+    delete[] this->m_T_e;
+    this->m_T_e = nullptr;
+
+    if (t_e == nullptr)
+    {
+        spdlog::error(" {} recieved empty T", this->m_subject_name);
+        return;
+    }
+
+    size_t len = std::strlen(t_e) + 1;
+    this->m_T_e = new char[len];
+
+    std::strcpy(this->m_T_e, t_e);
+
+    spdlog::info(" {} recieved extern T: {}", this->m_subject_name, this->m_T_e);
 }
 
 // ======================== Class Getters ========================
@@ -1210,28 +1357,33 @@ wcurve_id_t Subject::get_e_e_id() const
 
 char* Subject::getIdS() const
 {
-    if (!m_id_s)
+    if (!this->m_id_s)
     {
         return nullptr;
     }
 
-    size_t len = std::strlen(m_id_s) + 1;
+    size_t len = std::strlen(this->m_id_s) + 1;
     char* copy = new char[len];
-    std::strcpy(copy, m_id_s);
+    std::strcpy(copy, this->m_id_s);
     return copy;
 }
 
 char* Subject::getIdE() const
 {
-    if (!m_id_e)
+    if (!this->m_id_e)
     {
         return nullptr;
     }
 
-    size_t len = std::strlen(m_id_e) + 1;
+    size_t len = std::strlen(this->m_id_e) + 1;
     char* copy = new char[len];
-    std::strcpy(copy, m_id_e);
+    std::strcpy(copy, this->m_id_e);
     return copy;
+}
+
+char* Subject::getTS() const
+{
+    return this->m_T_s;
 }
 
 UTILS::AkryptCertificate Subject::getCert_s()
