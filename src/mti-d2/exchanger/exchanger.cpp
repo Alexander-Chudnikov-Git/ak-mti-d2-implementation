@@ -478,7 +478,7 @@ bool SubjectAuthenticateB::exit([[maybe_unused]] Subject& subject_a, [[maybe_unu
     {
         return false;
     }
-    
+
     if (!subject_a.validateMAC())
     {
         return false;
@@ -497,7 +497,13 @@ bool SubjectAuthenticateB::exit([[maybe_unused]] Subject& subject_a, [[maybe_unu
     auto exchange_a = subject_a.getK_s_key();
     auto exchange_b = subject_b.getK_s_key();
 
-    for (int i = 0; i < 32; i++)
+    if (sizeof(exchange_a) != sizeof(exchange_b))
+    {
+        spdlog::error(" Exchanged keys are different, exchange failed.");
+        return false;
+    }
+
+    for (std::size_t i = 0; i < sizeof(exchange_a) / sizeof(ak_uint64); ++i)
     {
         if (exchange_a[i] != exchange_b[i])
         {
