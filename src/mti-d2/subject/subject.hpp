@@ -96,7 +96,7 @@ public:
     const ak_uint64* getK_s_key() const;
     const wpoint getE_s_point() const;
     const wpoint getE_e_point() const;
-    const wpoint getQ_s_point() const;
+    const wpoint getQ_s_point(); // const
     const wpoint getQ_e_point() const;
     const wpoint getС_s_point() const;
     const wpoint getС_e_point() const;

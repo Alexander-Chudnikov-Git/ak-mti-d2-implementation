@@ -134,49 +134,6 @@ void Subject::initSubject(UTILS::AkryptCertificate cert_ca,
     this->getIdentifierE();
     // else
     /*this->m_id_e = id_e;*/
-
-    // DEBUG
-    /*
-    auto pubkey_wcurve = this->m_cert_s.get()->vkey.wc;
-
-    size_t ts = ak_hash_get_tag_size(&this->m_cert_s.get()->vkey.ctx);
-
-    spdlog::info("mwp_nq_str: {}", pubkey_wcurve->nq);
-    spdlog::info("mwp_n_str: {}", pubkey_wcurve->n);
-
-    std::string mwp_px_str = ak_mpzn_to_hexstr(pubkey_wcurve->point.x, ( ts>>3 ));
-    std::string mwp_py_str = ak_mpzn_to_hexstr(pubkey_wcurve->point.y, ( ts>>3 ));
-    std::string mwp_pz_str = ak_mpzn_to_hexstr(pubkey_wcurve->point.z, ( ts>>3 ));
-
-    spdlog::info("mwp_px_str: {}", mwp_px_str);
-    spdlog::info("mwp_py_str: {}", mwp_py_str);
-    spdlog::info("mwp_pz_str: {}", mwp_pz_str);
-
-    for (int i = 1; i <= 10000; ++i)
-    {
-        ak_uint64 k[4] = { static_cast<ak_uint64>(i), 0x0000000000000000LL, 0x0000000000000000LL, 0x0000000000000000LL };
-
-        struct wpoint multiple_wpoint;
-
-        ak_wpoint_pow(&multiple_wpoint, &pubkey_wcurve->point, k, sizeof(k), pubkey_wcurve); // Возводим точку в кратную степень
-
-        std::string mwp_wk_str = ak_mpzn_to_hexstr(k, (ts >> 3));
-
-        size_t non_zero_pos = mwp_wk_str.find_first_not_of('0');
-        if (non_zero_pos != std::string::npos)
-        {
-            mwp_wk_str = mwp_wk_str.substr(non_zero_pos);
-        }
-
-
-        std::string mwp_wpx_str = ak_mpzn_to_hexstr(multiple_wpoint.x, (ts >> 3));
-        std::string mwp_wpy_str = ak_mpzn_to_hexstr(multiple_wpoint.y, (ts >> 3));
-        std::string mwp_wpz_str = ak_mpzn_to_hexstr(multiple_wpoint.z, (ts >> 3));
-
-        spdlog::info("{}Px: {}", mwp_wk_str, mwp_wpx_str);
-        spdlog::info("{}Py: {}", mwp_wk_str, mwp_wpy_str);
-        spdlog::info("{}Pz: {}", mwp_wk_str, mwp_wpz_str);
-    }*/
 }
 
 void Subject::initLibAkrypt()
@@ -299,6 +256,9 @@ bool Subject::calculateСPoint()
 
     ak_wpoint_reduce(&this->m_С_e_point, this->m_cert_e.get()->vkey.wc);
 
+    spdlog::info(" {} Q_e point:", this->m_subject_name);
+    UTILS::AkryptHelper::logWPoint(this->m_Q_e_point, ak_mpzn256_size);
+
     spdlog::info(" {} C_e point:", this->m_subject_name);
     UTILS::AkryptHelper::logWPoint(this->m_С_e_point, ak_mpzn256_size);
 
@@ -314,39 +274,37 @@ bool Subject::calculateQPoint()
         return false;
     }
 
-
     // Test Q_a = [d_a]P
-    ak_mpzn512 sec_key = ak_mpzn512_one;
-    ak_mpzn512 one = ak_mpzn512_one;
-
+    //ak_mpzn512 sec_key = ak_mpzn512_one;
+    //ak_mpzn512 one = ak_mpzn512_one;
 
     //ak_mpzn_set_little_endian(test_qa, ak_mpzn256_size, this->m_d_s_key.get()->key, this->m_d_s_key.get()->key_size, ak_true);
 
-    wpoint    qa_point = {};
-    auto pubkey_wcurve = this->m_cert_s.get()->vkey.wc;
+    //wpoint    qa_point = {};
+    //auto pubkey_wcurve = this->m_cert_s.get()->vkey.wc;
 
     //spdlog::info(" one {}",     ak_ptr_to_hexstr(one, sizeof(ak_mpzn512), ak_true));
     //spdlog::info(" sec_key {}", ak_ptr_to_hexstr(sec_key, sizeof(ak_mpzn512), ak_true));
-    spdlog::info(" {} q_a point:", this->m_subject_name);
-    UTILS::AkryptHelper::logWPoint(qa_point, ak_mpzn256_size);
-    spdlog::info(" {} curve point:", this->m_subject_name);
-    UTILS::AkryptHelper::logWPoint(pubkey_wcurve->point, ak_mpzn256_size);
+    //spdlog::info(" {} q_a point:", this->m_subject_name);
+    //UTILS::AkryptHelper::logWPoint(qa_point, ak_mpzn256_size);
+    //spdlog::info(" {} curve point:", this->m_subject_name);
+    //UTILS::AkryptHelper::logWPoint(pubkey_wcurve->point, ak_mpzn256_size);
 
     //ak_wpoint_pow(&qa_point, &pubkey_wcurve->point, test_qa, ak_mpzn256_size, this->m_cert_s.get()->vkey.wc);
-    ak_mpzn_mul_montgomery(sec_key, (ak_uint64 *)(this->m_d_s_key.get()->key), one, this->m_cert_s.get()->vkey.wc->q, this->m_cert_s.get()->vkey.wc->nq, ak_mpzn256_size);
-    ak_wpoint_pow(&qa_point, &pubkey_wcurve->point, sec_key, this->m_cert_s.get()->vkey.wc->size, this->m_cert_s.get()->vkey.wc);
-    spdlog::info(" {} q_a point:", this->m_subject_name);
-    UTILS::AkryptHelper::logWPoint(qa_point, ak_mpzn256_size);
+    //ak_mpzn_mul_montgomery(sec_key, (ak_uint64 *)(this->m_d_s_key.get()->key), one, this->m_cert_s.get()->vkey.wc->q, this->m_cert_s.get()->vkey.wc->nq, ak_mpzn256_size);
+    //ak_wpoint_pow(&qa_point, &pubkey_wcurve->point, sec_key, this->m_cert_s.get()->vkey.wc->size, this->m_cert_s.get()->vkey.wc);
+    //spdlog::info(" {} q_a point:", this->m_subject_name);
+    //UTILS::AkryptHelper::logWPoint(qa_point, ak_mpzn256_size);
     //ak_mpzn_mul_montgomery(sec_key, (ak_uint64 *)(this->m_d_s_key.get()->key + this->m_d_s_key.get()->key_size), one, this->m_cert_s.get()->vkey.wc->q, this->m_cert_s.get()->vkey.wc->nq, ak_mpzn256_size);
     //ak_wpoint_pow(&qa_point, &qa_point, sec_key, this->m_cert_s.get()->vkey.wc->size, this->m_cert_s.get()->vkey.wc);
     //spdlog::info(" {} q_a point:", this->m_subject_name);
     //UTILS::AkryptHelper::logWPoint(qa_point, ak_mpzn256_size);
-    ak_wpoint_reduce(&qa_point, this->m_cert_s.get()->vkey.wc);
+    //ak_wpoint_reduce(&qa_point, this->m_cert_s.get()->vkey.wc);
 
-    spdlog::info(" {} Q_s point:", this->m_subject_name);
-    UTILS::AkryptHelper::logWPoint(this->m_Q_s_point, ak_mpzn256_size);
-    spdlog::info(" {} [d_s]P point:", this->m_subject_name);
-    UTILS::AkryptHelper::logWPoint(qa_point, ak_mpzn256_size);
+    //spdlog::info(" {} Q_s point:", this->m_subject_name);
+    //UTILS::AkryptHelper::logWPoint(this->m_Q_s_point, ak_mpzn256_size);
+    //spdlog::info(" {} [d_s]P point:", this->m_subject_name);
+    //UTILS::AkryptHelper::logWPoint(qa_point, ak_mpzn256_size);
 
     // Those calculations are probably wrong
     /*wpoint temp_point_1 = {};
@@ -368,6 +326,7 @@ bool Subject::calculateQPoint()
     //ak_mpzn_add_montgomery(result, this->m_Xi_s_key, key, this->m_cert_s.get()->vkey.wc->q, ak_mpzn256_size);
 
     spdlog::info(" Res {}", ak_mpzn_to_hexstr(result, ak_mpzn256_size));
+
     ak_wpoint_pow(&this->m_Q_se_point, &this->m_С_e_point, result, ak_mpzn256_size, this->m_cert_s.get()->vkey.wc);
 
     ak_wpoint_reduce(&this->m_Q_se_point, this->m_cert_s.get()->vkey.wc);
@@ -424,7 +383,6 @@ bool Subject::extractExternPublicKey()
     }
 
     ak_wpoint_set_wpoint(&this->m_Q_e_point, &this->m_cert_e.get()->vkey.qpoint, this->m_cert_e.get()->vkey.wc);
-    ak_wpoint_set_wpoint(&this->m_Q_s_point, &this->m_cert_s.get()->vkey.qpoint, this->m_cert_s.get()->vkey.wc);
 
     spdlog::info(" {} Extern Q point:", this->m_subject_name);
     UTILS::AkryptHelper::logWPoint(this->m_Q_e_point, ak_mpzn256_size);
@@ -1361,9 +1319,18 @@ const wpoint Subject::getE_e_point() const
     return this->m_E_e_point;
 }
 
-const wpoint Subject::getQ_s_point() const
+const wpoint Subject::getQ_s_point()
 {
-    return this->m_Q_s_point;
+    wpoint qa_point = {};
+    auto pubkey_wcurve = this->m_cert_s.get()->vkey.wc;
+
+    ak_wpoint_pow(&qa_point, &pubkey_wcurve->point, reinterpret_cast<ak_uint64 *>(this->m_d_s_key.get()->key), ak_mpzn256_size, pubkey_wcurve);
+    ak_wpoint_reduce(&qa_point, pubkey_wcurve);
+
+    return qa_point;
+
+    // This doesnt work
+    //return this->m_Q_s_point;
 }
 
 const wpoint Subject::getQ_e_point() const

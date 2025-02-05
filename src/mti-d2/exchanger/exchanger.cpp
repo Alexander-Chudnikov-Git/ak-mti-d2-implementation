@@ -139,10 +139,13 @@ bool SubjectCertificateA::enter([[maybe_unused]] Subject& subject_a, [[maybe_unu
         return false;
     }
 
-    if (!subject_b.extractExternPublicKey())
-    {
-        return false;
-    }
+    // Sould work
+    subject_b.setQ_e_point(subject_a.getQ_s_point());
+
+    //if (!subject_b.extractExternPublicKey())
+    //{
+    //    return false;
+    //}
 
     if (!subject_b.verifyXDiff())
     {
@@ -319,10 +322,13 @@ bool SubjectAuthenticateA::execute([[maybe_unused]] Subject& subject_a, [[maybe_
 {
     spdlog::info("                                                           ");
 
-    if (!subject_a.extractExternPublicKey())
-    {
-        return false;
-    }
+    // This should work
+    subject_a.setQ_e_point(subject_b.getQ_s_point());
+
+    //if (!subject_a.extractExternPublicKey())
+    //{
+    //    return false;
+    //}
 
     if (!subject_a.verifyXDiff())
     {
