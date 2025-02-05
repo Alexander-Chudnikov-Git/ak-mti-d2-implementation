@@ -21,7 +21,7 @@ In order to generate new ones, you can use aktool, provided inside libakrypt lib
 Here's simple guide for generating all of the nessesary stuff for
 1. **Generate self signed certificate and key pair**
 ```bash
-aktool k -nt sign512 --curve ec512b -o test_ca.key --op test_ca.crt \
+aktool k -nt sign512 --curve ec512a -o test_ca.key --op test_ca.crt \
    --to certificate --days 3650 --ca \
    --id "/cn=Example CA/ct=RU/st=Москва/ot=Blueline Software"
 ```
@@ -45,13 +45,13 @@ aktool k -s subject_b.csr --ca-key test_ca.key --ca-cert test_ca.crt \
 ```
 4. **Make sure you didn't fuckup anywhere**
 ```bash
-aktool -v test_ca.crt --verbose
+aktool k -v test_ca.crt --verbose
 ```
 ```bash
-aktool -v subject_a.crt --verbose
+aktool k -v subject_a.crt --verbose
 ```
 ```bash
-aktool -v subject_b.crt --verbose
+aktool k -v subject_b.crt --verbose
 ```
 
 ## Usage

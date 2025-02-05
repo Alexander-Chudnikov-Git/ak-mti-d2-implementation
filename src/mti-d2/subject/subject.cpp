@@ -203,11 +203,17 @@ bool Subject::generateRandomXiScalar()
     }
 
     // Add check for for Fq
-    if (ak_random_ptr(&generator, this->m_Xi_s_key, sizeof(this->m_Xi_s_key)) != ak_error_ok)
+    if (ak_mpzn_set_random_modulo(this->m_Xi_s_key, this->m_cert_s.get()->vkey.wc->q, ak_mpzn256_size, &generator) != ak_error_ok)
     {
         spdlog::error("Failed to generate random values.");
         ak_random_destroy(&generator);
         return false;
+    }
+
+    if (ak_mpzn_cmp(this->m_Xi_s_key, this->m_cert_s.get()->vkey.wc->q, ak_mpzn256_size) >= 0)
+    {
+        spdlog::warn("{} Wrong modulo for Xi_s.", this->m_subject_name);
+        ak_mpzn_rem(this->m_Xi_s_key, this->m_Xi_s_key, this->m_cert_s.get()->vkey.wc->q, ak_mpzn256_size);
     }
 
     ak_random_destroy(&generator);
@@ -235,11 +241,17 @@ bool Subject::generateRandomXiSEScalar()
     }
 
     // Add check for for Fq
-    if (ak_random_ptr(&generator, this->m_Xi_se_key, sizeof(this->m_Xi_se_key)) != ak_error_ok)
+    if (ak_mpzn_set_random_modulo(this->m_Xi_se_key, this->m_cert_s.get()->vkey.wc->q, ak_mpzn256_size, &generator) != ak_error_ok)
     {
         spdlog::error("Failed to generate random values.");
         ak_random_destroy(&generator);
         return false;
+    }
+
+    if (ak_mpzn_cmp(this->m_Xi_se_key, this->m_cert_s.get()->vkey.wc->q, ak_mpzn256_size) >= 0)
+    {
+        spdlog::warn("{} Wrong modulo for Xi_se.", this->m_subject_name);
+        ak_mpzn_rem(this->m_Xi_se_key, this->m_Xi_se_key, this->m_cert_s.get()->vkey.wc->q, ak_mpzn256_size);
     }
 
     ak_random_destroy(&generator);
@@ -264,6 +276,9 @@ bool Subject::calculateEPoint()
 
     ak_wpoint_reduce(&this->m_E_s_point, pubkey_wcurve);
 
+    spdlog::info(" {} P point:", this->m_subject_name);
+    UTILS::AkryptHelper::logWPoint(pubkey_wcurve->point, ak_mpzn256_size);
+
     spdlog::info(" {} E_s point:", this->m_subject_name);
     UTILS::AkryptHelper::logWPoint(this->m_E_s_point, ak_mpzn256_size);
 
@@ -278,7 +293,7 @@ bool Subject::calculateСPoint()
         return false;
     }
 
-    this->m_С_e_point = this->m_Q_e_point;
+    ak_wpoint_set_wpoint(&this->m_С_e_point, &this->m_Q_e_point, this->m_cert_e.get()->vkey.wc);
 
     ak_wpoint_add(&this->m_С_e_point, &this->m_E_e_point, this->m_cert_e.get()->vkey.wc);
 
@@ -299,6 +314,40 @@ bool Subject::calculateQPoint()
         return false;
     }
 
+
+    // Test Q_a = [d_a]P
+    ak_mpzn512 sec_key = ak_mpzn512_one;
+    ak_mpzn512 one = ak_mpzn512_one;
+
+
+    //ak_mpzn_set_little_endian(test_qa, ak_mpzn256_size, this->m_d_s_key.get()->key, this->m_d_s_key.get()->key_size, ak_true);
+
+    wpoint    qa_point = {};
+    auto pubkey_wcurve = this->m_cert_s.get()->vkey.wc;
+
+    //spdlog::info(" one {}",     ak_ptr_to_hexstr(one, sizeof(ak_mpzn512), ak_true));
+    //spdlog::info(" sec_key {}", ak_ptr_to_hexstr(sec_key, sizeof(ak_mpzn512), ak_true));
+    spdlog::info(" {} q_a point:", this->m_subject_name);
+    UTILS::AkryptHelper::logWPoint(qa_point, ak_mpzn256_size);
+    spdlog::info(" {} curve point:", this->m_subject_name);
+    UTILS::AkryptHelper::logWPoint(pubkey_wcurve->point, ak_mpzn256_size);
+
+    //ak_wpoint_pow(&qa_point, &pubkey_wcurve->point, test_qa, ak_mpzn256_size, this->m_cert_s.get()->vkey.wc);
+    ak_mpzn_mul_montgomery(sec_key, (ak_uint64 *)(this->m_d_s_key.get()->key), one, this->m_cert_s.get()->vkey.wc->q, this->m_cert_s.get()->vkey.wc->nq, ak_mpzn256_size);
+    ak_wpoint_pow(&qa_point, &pubkey_wcurve->point, sec_key, this->m_cert_s.get()->vkey.wc->size, this->m_cert_s.get()->vkey.wc);
+    spdlog::info(" {} q_a point:", this->m_subject_name);
+    UTILS::AkryptHelper::logWPoint(qa_point, ak_mpzn256_size);
+    //ak_mpzn_mul_montgomery(sec_key, (ak_uint64 *)(this->m_d_s_key.get()->key + this->m_d_s_key.get()->key_size), one, this->m_cert_s.get()->vkey.wc->q, this->m_cert_s.get()->vkey.wc->nq, ak_mpzn256_size);
+    //ak_wpoint_pow(&qa_point, &qa_point, sec_key, this->m_cert_s.get()->vkey.wc->size, this->m_cert_s.get()->vkey.wc);
+    //spdlog::info(" {} q_a point:", this->m_subject_name);
+    //UTILS::AkryptHelper::logWPoint(qa_point, ak_mpzn256_size);
+    ak_wpoint_reduce(&qa_point, this->m_cert_s.get()->vkey.wc);
+
+    spdlog::info(" {} Q_s point:", this->m_subject_name);
+    UTILS::AkryptHelper::logWPoint(this->m_Q_s_point, ak_mpzn256_size);
+    spdlog::info(" {} [d_s]P point:", this->m_subject_name);
+    UTILS::AkryptHelper::logWPoint(qa_point, ak_mpzn256_size);
+
     // Those calculations are probably wrong
     /*wpoint temp_point_1 = {};
     wpoint temp_point_2 = {};
@@ -308,13 +357,23 @@ bool Subject::calculateQPoint()
     ak_wpoint_set_wpoint(&this->m_Q_se_point, &temp_point_1, this->m_cert_s.get()->vkey.wc);
     ak_wpoint_add(&this->m_Q_se_point, &temp_point_2, this->m_cert_s.get()->vkey.wc);*/
 
-    ak_uint64 result[4];
-    std::memset(result, 0, sizeof(result));
+    ak_uint64 result[ak_mpznmax_size] = ak_mpznmax_zero;
 
-    ak_mpzn_add(result, this->m_Xi_s_key, reinterpret_cast<ak_uint64 *>(this->m_d_s_key.get()->key), ak_mpzn256_size);
+    //ak_mpzn_set_little_endian(key, ak_mpzn256_size, this->m_d_s_key.get()->key, this->m_d_s_key.get()->key_size, ak_false);
+
+    //spdlog::info(" Key {}", ak_ptr_to_hexstr(key, this->m_d_s_key.get()->key_size, ak_true));
+    spdlog::info(" Key {}", ak_ptr_to_hexstr(reinterpret_cast<ak_uint64 *>(this->m_d_s_key.get()->key), this->m_d_s_key.get()->key_size, ak_true));
+
+    ak_mpzn_add_montgomery(result, this->m_Xi_s_key, reinterpret_cast<ak_uint64 *>(this->m_d_s_key.get()->key), this->m_cert_s.get()->vkey.wc->q, ak_mpzn256_size);
+    //ak_mpzn_add_montgomery(result, this->m_Xi_s_key, key, this->m_cert_s.get()->vkey.wc->q, ak_mpzn256_size);
+
+    spdlog::info(" Res {}", ak_mpzn_to_hexstr(result, ak_mpzn256_size));
     ak_wpoint_pow(&this->m_Q_se_point, &this->m_С_e_point, result, ak_mpzn256_size, this->m_cert_s.get()->vkey.wc);
 
     ak_wpoint_reduce(&this->m_Q_se_point, this->m_cert_s.get()->vkey.wc);
+
+    // Test rest of algo
+    //ak_wpoint_set(&this->m_Q_se_point, this->m_cert_s.get()->vkey.wc);
 
     spdlog::info(" {} Q_se point:", this->m_subject_name);
     UTILS::AkryptHelper::logWPoint(this->m_Q_se_point, ak_mpzn256_size);
@@ -364,7 +423,9 @@ bool Subject::extractExternPublicKey()
         return false;
     }
 
-    this->m_Q_e_point = this->m_cert_e.get()->vkey.qpoint;
+    ak_wpoint_set_wpoint(&this->m_Q_e_point, &this->m_cert_e.get()->vkey.qpoint, this->m_cert_e.get()->vkey.wc);
+    ak_wpoint_set_wpoint(&this->m_Q_s_point, &this->m_cert_s.get()->vkey.qpoint, this->m_cert_s.get()->vkey.wc);
+
     spdlog::info(" {} Extern Q point:", this->m_subject_name);
     UTILS::AkryptHelper::logWPoint(this->m_Q_e_point, ak_mpzn256_size);
 
@@ -499,7 +560,7 @@ bool Subject::verifyExternCa()
         return false;
     }
 
-        if((this->m_cert_e.get()->opts.time.not_before > now) || (this->m_cert_e.get()->opts.time.not_after < now))
+    if((this->m_cert_e.get()->opts.time.not_before > now) || (this->m_cert_e.get()->opts.time.not_after < now))
     {
         spdlog::error("Extern certificate has expired. {}.", this->m_subject_name);
         return false;
@@ -507,25 +568,17 @@ bool Subject::verifyExternCa()
 
     // Fix verification, actually all of the certificates are verified while they are being loaded
     // So it sould not be a problem.
-    /*
-    struct certificate test_ca;
-    ak_certificate_opts_create(&test_ca.opts);
-    test_ca.vkey = {};
-
-    struct random generator;
-    ak_random_create_lcg(&generator);
-
-    ak_asn1 test_asn_1 = ak_certificate_export_to_asn1(this->m_cert_e.get(), UTILS::AkryptManager::getInstance().getCASkey().get(), this->m_cert_ca.get(), &generator);
-
-    if (ak_certificate_import_from_asn1(this->m_cert_e.get(), this->m_cert_ca.get(), test_asn_1) != ak_error_ok)
-    {
-        spdlog::error("Signature verification failed {}.", this->m_subject_name);
-        ak_certificate_destroy(&test_ca);
-        return false;
-    }
-    ak_certificate_destroy(&test_ca);
-
-    */
+    //ak_asn1 test_asn_1 = ak_certificate_export_to_asn1(this->m_cert_e.get(), &UTILS::AkryptManager::getInstance().getCASkey().get(), this->m_cert_ca.get(), &UTILS::AkryptManager::getInstance().getCASkey().get()->generator);
+    //int error = ak_error_ok;
+    //ak_certificate_opts_create(&this->m_cert_ca.get()->opts);
+    //error = ak_certificate_import_from_asn1(&this->m_cert_e.get(), this->m_cert_ca.get(), test_asn_1);
+    //ak_certificate_destroy(&this->m_cert_ca.get());
+    //
+    //if (error != ak_error_ok)
+    //{
+    //    spdlog::error("Extern certificate not verified. {}.", this->m_subject_name);
+    //    return false;
+    //}
 
     spdlog::info(" Signature verification passed {}.", this->m_subject_name);
 

@@ -5,6 +5,49 @@
 
 namespace UTILS
 {
+static int ak_signkey_unmask_multiplicative(ak_skey skey)
+{
+#ifndef AK_LITTLE_ENDIAN
+    unsigned int i = 0;
+#endif
+    ak_mpznmax u = ak_mpznmax_one;
+    ak_wcurve wc = NULL;
+    ak_uint64 *key = NULL, *mask = NULL;
+
+    /* "стандартные" проверки указателей и выделения памяти */
+    if( skey == NULL )
+        return ak_error_message( ak_error_null_pointer,
+                                     __func__ , "using a null pointer to secret key context" );
+    if( skey->key == NULL )
+        return ak_error_message( ak_error_null_pointer,
+                                             __func__ , "using a null pointer to key buffer" );
+    if( skey->key_size == 0 )
+        return ak_error_message( ak_error_zero_length, __func__ ,
+                                                       "using a key buffer with zero length" );
+    if(( wc = ( ak_wcurve ) skey->data ) == NULL )
+        return ak_error_message( ak_error_null_pointer, __func__ ,
+                                             "using internal null pointer to elliptic curve" );
+    /* проверяем, установлена ли маска ранее */
+    if( (( skey->flags)&key_flag_set_mask ) == 0 )
+        return ak_error_ok;
+
+    key = ( ak_uint64 *)skey->key;
+    mask = ( ak_uint64 *)( skey->key + skey->key_size );
+
+    /* снимаем маску с ключа */
+    ak_mpzn_mul_montgomery( key, key, mask, wc->q, wc->nq, wc->size );
+    /* приводим ключ из представления Монтгомери в естественное состояние */
+    ak_mpzn_mul_montgomery( key, key, u, wc->q, wc->nq, wc->size );
+#ifndef AK_LITTLE_ENDIAN
+    for( i = 0; i < wc->size; i++ ) key[i] = bswap_64( key[i] );
+#endif
+    /* меняем значение флага */
+    skey->flags ^= key_flag_set_mask;
+
+    return ak_error_ok;
+}
+
+
 AkryptCertificate AkryptHelper::loadCertificate(const std::string& certificate_path, AkryptCertificate ca_cert)
 {
     UTILS::AkryptManager::getInstance().startUsing();
@@ -96,6 +139,13 @@ AkryptSkey AkryptHelper::loadSkey(const std::string& skey_path)
 
     ak_skey raw_skey = static_cast<ak_skey>(ak_skey_load_from_file(skey_path.c_str()));
 
+    //if (ak_skey_unmask_xor(raw_skey) != ak_error_ok)
+    if (ak_signkey_unmask_multiplicative(raw_skey) != ak_error_ok)
+    {
+        spdlog::error("Unable to unmask skey.");
+        return AkryptSkey();
+    }
+
     if (raw_skey == nullptr)
     {
         spdlog::error("Failed to load secret key from file. {}", skey_path);
@@ -103,6 +153,10 @@ AkryptSkey AkryptHelper::loadSkey(const std::string& skey_path)
         ak_skey_delete(raw_skey);
         return AkryptSkey();
     }
+
+
+    spdlog::info(" Key {}", ak_ptr_to_hexstr(raw_skey->key, raw_skey->key_size, ak_false));
+    spdlog::info(" Key {}", ak_mpzn_to_hexstr(reinterpret_cast<ak_uint64 *>(raw_skey->key), ak_mpzn256_size));
 
     AkryptSkey key(raw_skey);
 
